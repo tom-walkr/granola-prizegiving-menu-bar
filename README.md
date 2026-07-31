@@ -4,12 +4,12 @@ Recently became aware of the Granola API, which allows users to fetch notes and 
 
 Idea is to parse the transcript and hand out (heavily tongue-in-cheek) awards to meeting participants post-meeting, thinking:
 
-> Chatterbox - biggest talker, both word count and total time spoken
-> Monologuer - longest monologue
-> Interruption Machine - who cuts across people mid sentence
-> Favourite words
-> Buzzword detector
-> etc...
+- **Chatterbox** - biggest talker, both word count and total time spoken
+- **Monologuer** - longest monologue
+- **Interruption Machine** - who cuts across people mid sentence
+- **Favourite words**
+- **Buzzword detector**
+- etc...
 
 
 ## Setup
