@@ -26,4 +26,4 @@ Other commands: `npm run check` (lint + typecheck), `npm run test`
 ## Status
 
 - Started: AI generated project scaffold: API client, speaker stats, awards logic
-- Todo: Styling pass, find a pull tokens from Granola design system.
+- Todo: Styling pass, find and pull tokens from Granola design system for alignment of some form.
