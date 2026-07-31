@@ -1,16 +1,16 @@
-# Granola Prizegiving
+# Granola Prizegiving - WIP
 
-A macOS menu bar app that turns a Granola meeting transcript into a set of
-talk-time awards for that meeting — longest monologue, quietest mouse,
-chatterbox, fastest talker, most interruptions.
+Recently became aware of the Granola API, which allows users to fetch notes and diarised transcripts. Simultaneously found myself monologuing super hard in a meeting at work. Been wanting to try my hand at building a MacOS menu bar item for a while and thought this would be a good opportunity. Have got Claude to scaffold out a simple project for me to add to.
 
-Work in progress. This pass covers the data layer, API client, tray/popover
-shell, and unstyled components — everything renders with plain semantic
-markup and no visual design yet. The styling pass is intentionally separate
-and hasn't happened.
+Idea is to parse the transcript and hand out (heavily tongue-in-cheek) awards to meeting participants post-meeting, thinking:
 
-See `AGENTS.md` for the stack, conventions, and the reasoning behind the
-diarization/awards logic.
+> Chatterbox - biggest talker, both word count and total time spoken
+> Monologuer - longest monologue
+> Interruption Machine - who cuts across people mid sentence
+> Favourite words
+> Buzzword detector
+> etc...
+
 
 ## Setup
 
@@ -25,7 +25,5 @@ Other commands: `npm run check` (lint + typecheck), `npm run test`
 
 ## Status
 
-- API client, speaker stats, and awards logic: done, tested.
-- Tray icon / popover window / menu bar behavior: done.
-- Components: functional, unstyled.
-- Design pass: not started.
+- Started: AI generated project scaffold: API client, speaker stats, awards logic
+- Todo: Styling pass, find a pull tokens from Granola design system.
