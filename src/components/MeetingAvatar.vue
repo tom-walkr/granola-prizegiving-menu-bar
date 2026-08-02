@@ -1,35 +1,45 @@
 <script setup lang="ts">
-defineProps<{
-  initials: string;
-  /** When true, shows the small share affordance on the avatar corner. */
-  shared?: boolean;
-}>();
+import { computed } from 'vue';
+import type { PrizegivingCapability } from '../logic/prizegivingCapability';
+import { prizegivingCapabilityLabel } from '../logic/prizegivingCapability';
+
+const props = withDefaults(
+  defineProps<{
+    initials: string;
+    /**
+     * Prizegiving readiness for this note. Empty / probing → no dot;
+     * two-way → grey; full → green.
+     */
+    prizegiving?: PrizegivingCapability | null;
+  }>(),
+  {
+    prizegiving: null,
+  }
+);
+
+/** Grey (two-way) and green (full) dots; empty / probing show nothing. */
+const prizeDot = computed(() => {
+  if (props.prizegiving === 'full' || props.prizegiving === 'two-way') {
+    return props.prizegiving;
+  }
+  return null;
+});
+
+const prizeLabel = computed(() =>
+  prizeDot.value ? prizegivingCapabilityLabel(prizeDot.value) : null
+);
 </script>
 
 <template>
-  <span class="meeting-avatar" aria-hidden="true">
-    <span class="meeting-avatar__face">{{ initials }}</span>
-    <span v-if="shared" class="meeting-avatar__badge" title="Shared">
-      <svg
-        class="meeting-avatar__badge-icon"
-        viewBox="0 0 12 12"
-        width="10"
-        height="10"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M8.5 3.5L4 6l4.5 2.5"
-          stroke="currentColor"
-          stroke-width="1.4"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
-        <circle cx="8.75" cy="3.25" r="1.35" fill="currentColor" />
-        <circle cx="8.75" cy="8.75" r="1.35" fill="currentColor" />
-        <circle cx="3.25" cy="6" r="1.35" fill="currentColor" />
-      </svg>
-    </span>
+  <span class="meeting-avatar">
+    <span class="meeting-avatar__face" aria-hidden="true">{{ initials }}</span>
+    <span
+      v-if="prizeDot"
+      class="meeting-avatar__prize"
+      :class="`is-${prizeDot}`"
+      :title="prizeLabel ?? undefined"
+      :aria-label="prizeLabel ?? undefined"
+    />
   </span>
 </template>
 
@@ -57,22 +67,22 @@ defineProps<{
   user-select: none;
 }
 
-.meeting-avatar__badge {
+.meeting-avatar__prize {
   position: absolute;
-  right: -3px;
-  bottom: -3px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border-radius: var(--radius-pill);
-  background: var(--color-oats-neutral-300);
-  color: var(--color-oats-white);
+  right: -2px;
+  bottom: -2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
   box-shadow: 0 0 0 1.5px var(--oats-surface);
 }
 
-.meeting-avatar__badge-icon {
-  display: block;
+.meeting-avatar__prize.is-full {
+  background: var(--color-dot-olive);
+}
+
+.meeting-avatar__prize.is-two-way {
+  background: var(--color-ink-quiet);
+  opacity: 0.85;
 }
 </style>

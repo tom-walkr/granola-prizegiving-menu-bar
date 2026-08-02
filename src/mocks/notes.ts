@@ -107,6 +107,7 @@ export const mockIosStandupNote: Note = {
       '## Weekly Standup\n\nRoadmap update from Bob, churn and expansion review from Carol.',
   },
   transcript: iosStandupTranscript,
+  web_url: 'https://notes.granola.ai/d/note-ios-standup',
 };
 
 export const mockMacosOneOnOneNote: Note = {
@@ -119,6 +120,7 @@ export const mockMacosOneOnOneNote: Note = {
     markdown: '## Vendor Proposal Call\n\nTimeline discussion for the upcoming proposal.',
   },
   transcript: macosOneOnOneTranscript,
+  web_url: 'https://notes.granola.ai/d/note-macos-1on1',
 };
 
 export const mockEmptyTranscriptNote: Note = {

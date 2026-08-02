@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref } from 'vue';
+import { computed, onUnmounted, ref, watch } from 'vue';
 import type { NoteListItem } from '../api/types';
 import {
   formatAttendeeLine,
@@ -10,8 +10,6 @@ import {
 import type { PrizegivingCapability } from '../logic/prizegivingCapability';
 import MeetingDateHeader from './MeetingDateHeader.vue';
 import MeetingEntry from './MeetingEntry.vue';
-
-const COLLAPSE_DELAY_MS = 160;
 
 type HeaderRow = { kind: 'header'; key: string; label: string };
 type NoteRow = { kind: 'note'; key: string; note: NoteListItem; stagger: number };
@@ -24,7 +22,7 @@ const props = withDefaults(
     /** Group under date headers (browse). Flat chronological list when false (recent). */
     grouped?: boolean;
     /**
-     * After selection, tuck non-selected rows into a hover-to-expand stack.
+     * After selection, tuck non-selected rows into a click-to-expand stack.
      * Off by default — the popover uses a recent / browse split instead.
      */
     collapsible?: boolean;
@@ -39,12 +37,10 @@ const props = withDefaults(
   }
 );
 
-defineEmits<{ select: [noteId: string] }>();
+const emit = defineEmits<{ select: [noteId: string] }>();
 
 const root = ref<HTMLElement | null>(null);
-const pointerInside = ref(false);
-const focusInside = ref(false);
-let collapseTimer: ReturnType<typeof setTimeout> | undefined;
+const expanded = ref(false);
 
 const flatNotes = computed(() => {
   if (!props.grouped) return props.notes;
@@ -62,10 +58,8 @@ const canCollapse = computed(
     flatNotes.value.length > 1
 );
 
-/** Stay open while the pointer or focus is in the list — including right after a click. */
-const collapsed = computed(
-  () => canCollapse.value && !pointerInside.value && !focusInside.value
-);
+/** Stay collapsed after a pick; click the stack face (or Escape / outside) to toggle. */
+const collapsed = computed(() => canCollapse.value && !expanded.value);
 
 const hiddenCount = computed(() =>
   Math.max(0, flatNotes.value.length - (props.selectedId ? 1 : 0))
@@ -105,34 +99,60 @@ const rows = computed((): ListRow[] => {
   return out;
 });
 
-function clearCollapseTimer(): void {
-  if (collapseTimer !== undefined) {
-    clearTimeout(collapseTimer);
-    collapseTimer = undefined;
+watch(
+  () => props.selectedId,
+  () => {
+    expanded.value = false;
   }
+);
+
+watch(canCollapse, (ok) => {
+  if (!ok) expanded.value = false;
+});
+
+function collapse(): void {
+  expanded.value = false;
 }
 
-function onPointerEnter(): void {
-  clearCollapseTimer();
-  pointerInside.value = true;
+function onDocumentPointerDown(event: PointerEvent): void {
+  if (!expanded.value) return;
+  const target = event.target as Node | null;
+  if (target && root.value?.contains(target)) return;
+  collapse();
 }
 
-function onPointerLeave(): void {
-  clearCollapseTimer();
-  collapseTimer = setTimeout(() => {
-    pointerInside.value = false;
-    collapseTimer = undefined;
-  }, COLLAPSE_DELAY_MS);
+function onDocumentKeyDown(event: KeyboardEvent): void {
+  if (event.key !== 'Escape' || !expanded.value) return;
+  collapse();
 }
 
-function onFocusIn(): void {
-  focusInside.value = true;
-}
+watch(expanded, (isOpen) => {
+  if (isOpen) {
+    document.addEventListener('pointerdown', onDocumentPointerDown, true);
+    document.addEventListener('keydown', onDocumentKeyDown, true);
+  } else {
+    document.removeEventListener('pointerdown', onDocumentPointerDown, true);
+    document.removeEventListener('keydown', onDocumentKeyDown, true);
+  }
+});
 
-function onFocusOut(event: FocusEvent): void {
-  const next = event.relatedTarget as Node | null;
-  if (next && root.value?.contains(next)) return;
-  focusInside.value = false;
+function onEntrySelect(noteId: string): void {
+  if (!canCollapse.value) {
+    emit('select', noteId);
+    return;
+  }
+
+  if (collapsed.value) {
+    expanded.value = true;
+    return;
+  }
+
+  if (noteId === props.selectedId) {
+    collapse();
+    return;
+  }
+
+  emit('select', noteId);
 }
 
 function isTucked(row: ListRow): boolean {
@@ -141,7 +161,10 @@ function isTucked(row: ListRow): boolean {
   return row.note.id !== props.selectedId;
 }
 
-onUnmounted(() => clearCollapseTimer());
+onUnmounted(() => {
+  document.removeEventListener('pointerdown', onDocumentPointerDown, true);
+  document.removeEventListener('keydown', onDocumentKeyDown, true);
+});
 </script>
 
 <template>
@@ -150,10 +173,6 @@ onUnmounted(() => clearCollapseTimer());
     class="meeting-list"
     :class="{ 'is-collapsed': collapsed }"
     :aria-expanded="canCollapse ? !collapsed : undefined"
-    @mouseenter="onPointerEnter"
-    @mouseleave="onPointerLeave"
-    @focusin="onFocusIn"
-    @focusout="onFocusOut"
   >
     <ul class="meeting-list__rows">
       <li
@@ -192,9 +211,8 @@ onUnmounted(() => clearCollapseTimer());
               :time="formatMeetingTime(row.note.created_at)"
               :initials="initialsFromTitle(row.note.title)"
               :selected="row.note.id === selectedId"
-              :shared="(row.note.attendees?.length ?? 0) > 1"
               :prizegiving="prizegivingById[row.note.id] ?? null"
-              @select="$emit('select', row.note.id)"
+              @select="onEntrySelect(row.note.id)"
             />
           </div>
         </div>
@@ -203,7 +221,7 @@ onUnmounted(() => clearCollapseTimer());
 
     <p v-if="collapsed" class="meeting-list__hint" aria-hidden="true">
       <span class="meeting-list__hint-count">{{ hiddenCount }} more</span>
-      <span class="meeting-list__hint-action">Hover to switch</span>
+      <span class="meeting-list__hint-action">Click to switch</span>
     </p>
   </div>
 </template>

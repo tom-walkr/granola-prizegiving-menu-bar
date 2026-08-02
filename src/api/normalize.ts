@@ -50,6 +50,7 @@ export interface ApiNoteDetail extends ApiNoteListItem {
   attendees?: ApiUser[] | null;
   summary_markdown?: string | null;
   transcript?: ApiTranscriptUtterance[] | null;
+  web_url?: string | null;
 }
 
 function normalizeAttendee(user: ApiUser): Attendee {
@@ -201,11 +202,13 @@ export function normalizeNote(raw: ApiNoteDetail): Note {
   const list = normalizeNoteListItem(raw);
   const attendees = (raw.attendees ?? []).map(normalizeAttendee);
   const markdown = raw.summary_markdown?.trim();
+  const webUrl = raw.web_url?.trim();
 
   return {
     ...list,
     attendees,
     summary: markdown ? { markdown } : null,
     transcript: normalizeTranscript(raw.transcript),
+    ...(webUrl ? { web_url: webUrl } : {}),
   };
 }

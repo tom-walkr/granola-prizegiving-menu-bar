@@ -7,6 +7,11 @@ import AwardsBoard from './components/AwardsBoard.vue';
 import NoteSelector from './components/NoteSelector.vue';
 import PopoverShell from './components/PopoverShell.vue';
 import {
+  ensureNotificationPermission,
+  listenAwardsReadyOpen,
+  showPopoverWindow,
+} from './notifications/awardsReady';
+import {
   listenSettingsChanged,
   loadSettings,
   openSettingsWindow,
@@ -18,6 +23,7 @@ const ready = ref(false);
 const noteSelector = useTemplateRef('noteSelector');
 
 let stopSettingsListen: (() => void) | undefined;
+let stopNotificationListen: (() => void) | undefined;
 
 onMounted(async () => {
   await loadSettings();
@@ -37,10 +43,18 @@ onMounted(async () => {
     selectedNoteId.value = null;
     noteSelector.value?.refresh();
   });
+
+  void ensureNotificationPermission();
+  stopNotificationListen = await listenAwardsReadyOpen(async (noteId) => {
+    selectedNoteId.value = noteId;
+    browsingMeetings.value = false;
+    await showPopoverWindow();
+  });
 });
 
 onUnmounted(() => {
   stopSettingsListen?.();
+  stopNotificationListen?.();
 });
 
 async function onOpenSettings(): Promise<void> {

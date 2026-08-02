@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import trophyIcon from '../assets/trophy.svg?raw';
 import type { PrizegivingCapability } from '../logic/prizegivingCapability';
-import { prizegivingCapabilityLabel } from '../logic/prizegivingCapability';
 import MeetingAvatar from './MeetingAvatar.vue';
 
 withDefaults(
@@ -11,17 +9,15 @@ withDefaults(
     time: string;
     initials: string;
     selected?: boolean;
-    /** Show the share badge when the note has other attendees. */
-    shared?: boolean;
     /**
      * Whether this note can render full AwardCards (`full`), only the
      * you-vs-rest comparison, or nothing. Omit / null while still probing.
+     * Shown as a corner dot on the avatar.
      */
     prizegiving?: PrizegivingCapability | null;
   }>(),
   {
     selected: false,
-    shared: false,
     prizegiving: null,
   }
 );
@@ -37,7 +33,7 @@ defineEmits<{ select: [] }>();
     :aria-pressed="selected"
     @click="$emit('select')"
   >
-    <MeetingAvatar :initials="initials" :shared="shared" />
+    <MeetingAvatar :initials="initials" :prizegiving="prizegiving" />
 
     <span class="meeting-entry__body">
       <span class="meeting-entry__title">{{ title }}</span>
@@ -45,14 +41,6 @@ defineEmits<{ select: [] }>();
     </span>
 
     <span class="meeting-entry__meta">
-      <span
-        v-if="prizegiving"
-        class="meeting-entry__prizegiving"
-        :class="`is-${prizegiving}`"
-        :title="prizegivingCapabilityLabel(prizegiving)"
-        :aria-label="prizegivingCapabilityLabel(prizegiving)"
-        v-html="trophyIcon"
-      />
       <span class="meeting-entry__time">{{ time }}</span>
     </span>
   </button>
@@ -125,34 +113,9 @@ defineEmits<{ select: [] }>();
   flex-direction: column;
   align-items: flex-end;
   justify-content: center;
-  gap: 2px;
   flex-shrink: 0;
   margin-left: var(--space-sm);
   min-height: 2.4em;
-}
-
-.meeting-entry__prizegiving {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 14px;
-  height: 14px;
-}
-
-.meeting-entry__prizegiving :deep(svg) {
-  display: block;
-  width: 14px;
-  height: 14px;
-}
-
-.meeting-entry__prizegiving.is-full {
-  color: var(--color-ink-accent-strong);
-}
-
-.meeting-entry__prizegiving.is-two-way,
-.meeting-entry__prizegiving.is-empty {
-  color: var(--color-ink-quiet);
-  opacity: 0.45;
 }
 
 .meeting-entry__time {

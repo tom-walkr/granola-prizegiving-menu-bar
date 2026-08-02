@@ -1,19 +1,24 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
-import { describeGranolaLoadError, getNote, listAllNotes } from '../api/granola';
+import { describeGranolaLoadError, getNote, listNotes } from '../api/granola';
 import type { NoteListItem } from '../api/types';
 import chevronLeft from '../assets/chevron-left.svg?raw';
 import granolaLogo from '../assets/granola-pg-logo.svg';
+import { diffNewNoteIds } from '../logic/newNotes';
 import {
   classifyPrizegivingCapability,
   type PrizegivingCapability,
 } from '../logic/prizegivingCapability';
+import { isPopoverFocused, notifyAwardsReady } from '../notifications/awardsReady';
+import { loadSeenNoteIds, saveSeenNoteIds } from '../notifications/seenNotes';
 import MeetingList from './MeetingList.vue';
 import MeetingListSkeleton from './MeetingListSkeleton.vue';
 
 const DEFAULT_POLL_INTERVAL_MS = 5 * 60 * 1000;
 const MIN_REFRESH_GAP_MS = 2000;
 const RECENT_COUNT = 3;
+/** First page of meetings; "Load older" fetches another page of this size. */
+const PAGE_SIZE = 20;
 
 type View = 'recent' | 'browse';
 
@@ -34,11 +39,16 @@ const emit = defineEmits<{
 
 const notes = ref<NoteListItem[]>([]);
 const isLoading = ref(false);
+const isLoadingMore = ref(false);
 const error = ref<string | null>(null);
 const view = ref<View>('recent');
 /** Directional slide: forward = into browse, back = return to recent. */
 const slideName = ref('note-slide-forward');
 const prizegivingById = reactive<Record<string, PrizegivingCapability>>({});
+const hasMore = ref(false);
+const nextCursor = ref<string | null>(null);
+/** How many pages to re-fetch on poll so older loads survive a refresh. */
+const pagesWanted = ref(1);
 
 let pollHandle: ReturnType<typeof setInterval> | undefined;
 let lastFetchAt = 0;
@@ -114,6 +124,64 @@ async function probePrizegiving(ids: string[]): Promise<void> {
   );
 }
 
+/**
+ * After a successful list poll: seed seen ids on first run, otherwise notify
+ * for newly appeared notes that can actually show awards (full / two-way).
+ */
+async function detectAndNotifyNewAwards(list: NoteListItem[]): Promise<void> {
+  try {
+    const seen = await loadSeenNoteIds();
+    const currentIds = list.map((note) => note.id);
+    const { isBaseline, newIds } = diffNewNoteIds(seen, currentIds);
+
+    if (isBaseline) {
+      await saveSeenNoteIds(currentIds);
+      return;
+    }
+    if (newIds.length === 0) return;
+
+    await probePrizegiving(newIds);
+
+    const confirmed = new Set(seen);
+    const focused = await isPopoverFocused();
+    for (const id of newIds) {
+      const capability = prizegivingById[id];
+      // Probe failed — leave unseen so the next poll can retry.
+      if (capability === undefined) continue;
+      confirmed.add(id);
+      if (capability !== 'full' && capability !== 'two-way') continue;
+      if (focused && props.selectedId === id) continue;
+      const title = list.find((note) => note.id === id)?.title ?? 'New meeting';
+      await notifyAwardsReady(id, title);
+    }
+    await saveSeenNoteIds([...confirmed]);
+  } catch {
+    // Notifications are best-effort — list UI still works if persistence fails.
+  }
+}
+
+async function fetchNotePages(pageCount: number): Promise<{
+  notes: NoteListItem[];
+  hasMore: boolean;
+  cursor: string | null;
+}> {
+  const collected: NoteListItem[] = [];
+  let cursor: string | undefined;
+  let more = false;
+  let next: string | null = null;
+
+  for (let page = 0; page < pageCount; page += 1) {
+    const result = await listNotes({ limit: PAGE_SIZE, cursor });
+    collected.push(...result.notes);
+    more = result.hasMore;
+    next = result.cursor;
+    if (!result.hasMore || !result.cursor) break;
+    cursor = result.cursor;
+  }
+
+  return { notes: collected, hasMore: more, cursor: next };
+}
+
 async function loadNotes(): Promise<void> {
   if (props.forcedStatus === 'loading') {
     isLoading.value = true;
@@ -127,13 +195,19 @@ async function loadNotes(): Promise<void> {
   if (props.forcedStatus === 'empty') {
     isLoading.value = false;
     notes.value = [];
+    hasMore.value = false;
+    nextCursor.value = null;
+    pagesWanted.value = 1;
     return;
   }
 
   isLoading.value = true;
   error.value = null;
   try {
-    notes.value = await listAllNotes();
+    const result = await fetchNotePages(pagesWanted.value);
+    notes.value = result.notes;
+    hasMore.value = result.hasMore;
+    nextCursor.value = result.cursor;
     lastFetchAt = Date.now();
     probeGeneration += 1;
 
@@ -153,10 +227,35 @@ async function loadNotes(): Promise<void> {
     if (view.value === 'browse') {
       void probePrizegiving(notes.value.map((n) => n.id));
     }
+    void detectAndNotifyNewAwards(notes.value);
   } catch (err) {
     error.value = describeGranolaLoadError(err);
   } finally {
     isLoading.value = false;
+  }
+}
+
+async function loadOlder(): Promise<void> {
+  if (!hasMore.value || !nextCursor.value || isLoadingMore.value) return;
+
+  isLoadingMore.value = true;
+  error.value = null;
+  try {
+    const result = await listNotes({ limit: PAGE_SIZE, cursor: nextCursor.value });
+    const existing = new Set(notes.value.map((n) => n.id));
+    const appended = result.notes.filter((n) => !existing.has(n.id));
+    notes.value = [...notes.value, ...appended];
+    hasMore.value = result.hasMore;
+    nextCursor.value = result.cursor;
+    pagesWanted.value += 1;
+
+    if (view.value === 'browse' && appended.length > 0) {
+      void probePrizegiving(appended.map((n) => n.id));
+    }
+  } catch (err) {
+    error.value = describeGranolaLoadError(err);
+  } finally {
+    isLoadingMore.value = false;
   }
 }
 
@@ -261,6 +360,19 @@ defineExpose({ refresh });
               :prizegiving-by-id="prizegivingById"
               @select="onSelect"
             />
+
+            <button
+              v-if="hasMore"
+              type="button"
+              class="note-selector__browse note-selector__browse--older"
+              :disabled="isLoadingMore"
+              @click="loadOlder"
+            >
+              <span class="note-selector__browse-label">
+                {{ isLoadingMore ? 'Loading…' : 'Load older meetings' }}
+              </span>
+              <span class="note-selector__browse-meta">{{ sortedNotes.length }} shown</span>
+            </button>
           </div>
         </div>
       </Transition>
@@ -331,9 +443,18 @@ defineExpose({ refresh });
   margin: 0;
 }
 
-.note-selector__browse:hover,
+.note-selector__browse--older {
+  margin: var(--space-sm) 0 0;
+}
+
+.note-selector__browse:hover:not(:disabled),
 .note-selector__browse:focus-visible {
   background: var(--oats-fill-soft);
+}
+
+.note-selector__browse:disabled {
+  cursor: default;
+  opacity: 0.7;
 }
 
 .note-selector__browse:focus-visible {

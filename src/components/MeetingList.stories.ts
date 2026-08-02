@@ -58,7 +58,7 @@ const meta: Meta<typeof MeetingList> = {
     docs: {
       description: {
         component:
-          'Meeting rows with optional date grouping. Pass `collapsible` to tuck non-selected rows into a hover stack (Storybook demo). The popover uses a recent / browse split instead.',
+          'Meeting rows with optional date grouping. Pass `collapsible` to tuck non-selected rows into a click-to-expand stack (Storybook demo). The popover uses a recent / browse split instead.',
       },
     },
   },
@@ -93,7 +93,7 @@ export const CollapsedStack: Story = {
     template: `
       <div>
         <p style="margin: 0 0 12px; font: 12px/1.4 system-ui; color: #72726e;">
-          Leave the list to collapse · hover to expand
+          Click the stack to expand · pick a meeting or click again to collapse
         </p>
         <MeetingList
           :notes="notes"
@@ -116,7 +116,7 @@ export const Interactive: Story = {
     template: `
       <div>
         <p style="margin: 0 0 12px; font: 12px/1.4 system-ui; color: #72726e;">
-          Pick a meeting — then move the pointer away to see the stack.
+          Pick a meeting — the stack collapses; click it to switch.
         </p>
         <MeetingList
           :notes="notes"

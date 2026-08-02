@@ -9,7 +9,6 @@ const meta: Meta<typeof MeetingEntry> = {
     subtitle: 'Douglas, Damjan & 2 others',
     time: '16:00',
     initials: 'GP',
-    shared: true,
     selected: false,
   },
   decorators: [
@@ -31,7 +30,6 @@ export const Selected: Story = {
     subtitle: 'Douglas Brion',
     time: '15:30',
     initials: 'BR',
-    shared: true,
     selected: true,
   },
 };
@@ -42,7 +40,6 @@ export const Solo: Story = {
     subtitle: 'You',
     time: '11:00',
     initials: 'QS',
-    shared: false,
     prizegiving: 'empty',
   },
 };
@@ -53,7 +50,6 @@ export const FullPrizegiving: Story = {
     subtitle: 'Alice, Bob & 1 other',
     time: '09:00',
     initials: 'WS',
-    shared: true,
     prizegiving: 'full',
   },
 };
@@ -64,7 +60,6 @@ export const TwoWayOnly: Story = {
     subtitle: 'You, Jordan',
     time: '14:00',
     initials: 'VP',
-    shared: true,
     prizegiving: 'two-way',
   },
 };
@@ -75,7 +70,6 @@ export const LongTitle: Story = {
     subtitle: 'Alice, Bob & 5 others',
     time: '09:00',
     initials: 'QP',
-    shared: true,
     prizegiving: 'full',
   },
 };

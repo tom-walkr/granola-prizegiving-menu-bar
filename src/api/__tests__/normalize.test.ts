@@ -72,6 +72,7 @@ describe('normalizeNote', () => {
       attendees: [{ name: null, email: 'doug@example.com' }, { name: 'Alice' }],
       summary_markdown: '## Hello',
       transcript: [],
+      web_url: 'https://notes.granola.ai/d/f3e45e0f-24cc-480b-9a6c-8b1f5e3d7a2c',
     });
 
     expect(note.summary).toEqual({ markdown: '## Hello' });
@@ -80,5 +81,8 @@ describe('normalizeNote', () => {
       { name: 'Alice' },
     ]);
     expect(note.transcript).toEqual([]);
+    expect(note.web_url).toBe(
+      'https://notes.granola.ai/d/f3e45e0f-24cc-480b-9a6c-8b1f5e3d7a2c'
+    );
   });
 });

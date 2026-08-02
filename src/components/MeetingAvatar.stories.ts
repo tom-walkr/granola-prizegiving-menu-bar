@@ -6,7 +6,7 @@ const meta: Meta<typeof MeetingAvatar> = {
   title: 'Design System/MeetingAvatar',
   args: {
     initials: 'GP',
-    shared: false,
+    prizegiving: null,
   },
 };
 
@@ -16,6 +16,10 @@ type Story = StoryObj<typeof MeetingAvatar>;
 
 export const Initials: Story = {};
 
-export const Shared: Story = {
-  args: { initials: 'BR', shared: true },
+export const FullPrizegiving: Story = {
+  args: { initials: 'WS', prizegiving: 'full' },
+};
+
+export const TwoWayOnly: Story = {
+  args: { initials: 'VP', prizegiving: 'two-way' },
 };

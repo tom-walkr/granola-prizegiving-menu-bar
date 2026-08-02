@@ -43,6 +43,8 @@ export interface NoteListItem {
 export interface Note extends NoteListItem {
   summary: NoteSummary | null;
   transcript?: TranscriptUtterance[];
+  /** Granola web/app link from the API (`https://notes.granola.ai/d/…`). */
+  web_url?: string;
 }
 
 export interface ListNotesParams {

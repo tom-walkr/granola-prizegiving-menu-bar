@@ -1,5 +1,8 @@
 mod granola_api;
 mod launch_at_login;
+mod open_url;
+mod popover;
+mod seen_notes;
 mod settings;
 
 use tauri::{
@@ -25,12 +28,17 @@ const TRAY_ICON_BYTES: &[u8] = include_bytes!("../icons/tray/tray-icon-dark@2x.p
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_positioner::init())
+        .plugin(tauri_plugin_notification::init())
         .invoke_handler(tauri::generate_handler![
             granola_api::granola_http_get,
+            open_url::open_external_url,
             settings::get_settings,
             settings::set_settings,
             settings::open_settings_window,
             settings::close_settings_window,
+            seen_notes::get_seen_note_ids,
+            seen_notes::set_seen_note_ids,
+            popover::show_popover,
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {

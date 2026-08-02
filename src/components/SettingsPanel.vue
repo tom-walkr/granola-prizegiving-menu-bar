@@ -185,6 +185,13 @@ function selectMock(): void {
 </template>
 
 <style scoped>
+/* Transparent shell so the rounded panel corners show through the window. */
+:global(html[data-chrome='flat']),
+:global(html[data-chrome='flat'] body),
+:global(html[data-chrome='flat'] #app) {
+  background: transparent;
+}
+
 .settings-window {
   box-sizing: border-box;
   display: flex;
@@ -192,6 +199,8 @@ function selectMock(): void {
   gap: var(--space-xl);
   min-height: 100vh;
   padding: var(--space-2xl);
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
   background: var(--color-oats-neutral-100);
   color: var(--color-ink);
   font-family: var(--font-sans);

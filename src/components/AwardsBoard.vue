@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { getNote, describeGranolaLoadError } from '../api/granola';
 import clipboardIcon from '../assets/clipboard.svg?raw';
+import externalLinkIcon from '../assets/external-link.svg?raw';
 import slackIcon from '../assets/slack.svg?raw';
 import { computeAwards } from '../logic/awards';
 import type { AwardsResult } from '../logic/awards';
@@ -9,6 +10,7 @@ import { formatAwardsForSlack, formatAwardsPlain } from '../logic/slackSummary';
 import { computeSpeakerStats } from '../logic/speakerStats';
 import type { SpeakerStats } from '../logic/speakerStats';
 import { wordShareFromStats } from '../logic/wordShare';
+import { openGranolaNote } from '../openGranola';
 import AwardCard from './AwardCard.vue';
 import AwardsBoardSkeleton from './AwardsBoardSkeleton.vue';
 import TwoWayComparison from './TwoWayComparison.vue';
@@ -31,6 +33,7 @@ const errorMessage = ref('');
 const stats = ref<SpeakerStats | null>(null);
 const meetingTitle = ref('');
 const meetingCreatedAt = ref('');
+const noteWebUrl = ref<string | null>(null);
 const loadedNoteId = ref<string | null>(null);
 const plainCopyState = ref<CopyFeedback>('idle');
 const slackCopyState = ref<CopyFeedback>('idle');
@@ -93,6 +96,7 @@ function clearMeeting(): void {
   stats.value = null;
   meetingTitle.value = '';
   meetingCreatedAt.value = '';
+  noteWebUrl.value = null;
   loadedNoteId.value = null;
   resetCopyFeedback();
 }
@@ -107,6 +111,7 @@ async function load(noteId: string): Promise<void> {
     stats.value = null;
     meetingTitle.value = '';
     meetingCreatedAt.value = '';
+    noteWebUrl.value = null;
   }
 
   if (props.forcedStatus === 'loading') return;
@@ -132,6 +137,7 @@ async function load(noteId: string): Promise<void> {
     stats.value = computeSpeakerStats(note.transcript, note.attendees);
     meetingTitle.value = note.title;
     meetingCreatedAt.value = note.created_at;
+    noteWebUrl.value = note.web_url ?? null;
     loadedNoteId.value = noteId;
     status.value = 'ready';
   } catch (err) {
@@ -194,6 +200,15 @@ async function copyForSlack(): Promise<void> {
     }
   }
   scheduleCopyReset('slack');
+}
+
+async function openInGranola(): Promise<void> {
+  if (!noteWebUrl.value) return;
+  try {
+    await openGranolaNote(noteWebUrl.value);
+  } catch {
+    // Best-effort — nothing to surface in the toolbar if open fails.
+  }
 }
 
 onMounted(() => load(props.noteId));
@@ -290,6 +305,21 @@ onUnmounted(() => {
             v-html="slackIcon"
           />
           <span class="awards-board__copy-label">{{ slackCopyLabel }}</span>
+        </button>
+        <button
+          v-if="noteWebUrl"
+          type="button"
+          class="awards-board__copy"
+          aria-label="Open Granola"
+          title="Open Granola"
+          @click="openInGranola"
+        >
+          <span
+            class="awards-board__copy-icon"
+            aria-hidden="true"
+            v-html="externalLinkIcon"
+          />
+          <span class="awards-board__copy-label">Open Granola</span>
         </button>
       </div>
     </template>
