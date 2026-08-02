@@ -13,6 +13,7 @@ import {
 } from './settings/store';
 
 const selectedNoteId = ref<string | null>(null);
+const browsingMeetings = ref(false);
 const ready = ref(false);
 const noteSelector = useTemplateRef('noteSelector');
 
@@ -77,8 +78,12 @@ async function onOpenSettings(): Promise<void> {
         ref="noteSelector"
         :selected-id="selectedNoteId"
         @select="selectedNoteId = $event"
+        @browsing="browsingMeetings = $event"
       />
-      <AwardsBoard v-if="selectedNoteId" :note-id="selectedNoteId" />
+      <AwardsBoard
+        v-if="selectedNoteId && !browsingMeetings"
+        :note-id="selectedNoteId"
+      />
     </template>
   </PopoverShell>
 </template>

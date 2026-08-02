@@ -143,6 +143,7 @@ html:not([data-chrome]) .popover-shell {
   gap: var(--chrome-gap);
   min-height: 0;
   flex: 1;
+  overflow: hidden;
 }
 
 /* ------------------------------------------------------------------ */

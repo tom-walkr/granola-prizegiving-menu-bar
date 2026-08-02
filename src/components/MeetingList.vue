@@ -16,10 +16,24 @@ type HeaderRow = { kind: 'header'; key: string; label: string };
 type NoteRow = { kind: 'note'; key: string; note: NoteListItem; stagger: number };
 type ListRow = HeaderRow | NoteRow;
 
-const props = defineProps<{
-  notes: NoteListItem[];
-  selectedId?: string | null;
-}>();
+const props = withDefaults(
+  defineProps<{
+    notes: NoteListItem[];
+    selectedId?: string | null;
+    /** Group under date headers (browse). Flat chronological list when false (recent). */
+    grouped?: boolean;
+    /**
+     * After selection, tuck non-selected rows into a hover-to-expand stack.
+     * Off by default — the popover uses a recent / browse split instead.
+     */
+    collapsible?: boolean;
+  }>(),
+  {
+    selectedId: null,
+    grouped: true,
+    collapsible: false,
+  }
+);
 
 defineEmits<{ select: [noteId: string] }>();
 
@@ -28,12 +42,13 @@ const pointerInside = ref(false);
 const focusInside = ref(false);
 let collapseTimer: ReturnType<typeof setTimeout> | undefined;
 
-const groups = computed(() => groupNotesByDate(props.notes));
-
-const flatNotes = computed(() => groups.value.flatMap((g) => g.notes));
+const flatNotes = computed(() => {
+  if (!props.grouped) return props.notes;
+  return groupNotesByDate(props.notes).flatMap((g) => g.notes);
+});
 
 const canCollapse = computed(
-  () => Boolean(props.selectedId) && flatNotes.value.length > 1
+  () => props.collapsible && Boolean(props.selectedId) && flatNotes.value.length > 1
 );
 
 /** Stay open while the pointer or focus is in the list — including right after a click. */
@@ -55,7 +70,17 @@ const rows = computed((): ListRow[] => {
   const out: ListRow[] = [];
   let noteIndex = 0;
 
-  for (const group of groups.value) {
+  if (!props.grouped) {
+    for (const note of props.notes) {
+      const stagger =
+        selectedIndex >= 0 ? Math.abs(noteIndex - selectedIndex) : noteIndex;
+      out.push({ kind: 'note', key: note.id, note, stagger });
+      noteIndex += 1;
+    }
+    return out;
+  }
+
+  for (const group of groupNotesByDate(props.notes)) {
     out.push({ kind: 'header', key: `h-${group.key}`, label: group.label });
 
     for (const note of group.notes) {

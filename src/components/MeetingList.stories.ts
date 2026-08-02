@@ -58,7 +58,7 @@ const meta: Meta<typeof MeetingList> = {
     docs: {
       description: {
         component:
-          'After a meeting is selected, the list collapses into a stack. Hover or focus the stack to fan meetings back out and switch.',
+          'Meeting rows with optional date grouping. Pass `collapsible` to tuck non-selected rows into a hover stack (Storybook demo). The popover uses a recent / browse split instead.',
       },
     },
   },
@@ -98,6 +98,7 @@ export const CollapsedStack: Story = {
         <MeetingList
           :notes="notes"
           :selected-id="selectedId"
+          collapsible
           @select="selectedId = $event"
         />
       </div>
@@ -120,6 +121,7 @@ export const Interactive: Story = {
         <MeetingList
           :notes="notes"
           :selected-id="selectedId"
+          collapsible
           @select="selectedId = $event"
         />
       </div>

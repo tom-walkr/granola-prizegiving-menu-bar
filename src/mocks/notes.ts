@@ -133,14 +133,40 @@ export const mockEmptyTranscriptNote: Note = {
 
 const MOCK_NOTES: Note[] = [mockIosStandupNote, mockMacosOneOnOneNote, mockEmptyTranscriptNote];
 
+/** Extra list rows so Storybook / mock mode can exercise the browse-all page. */
+const MOCK_LIST_ONLY: NoteListItem[] = [
+  {
+    id: 'note-list-design-review',
+    title: 'Design review',
+    created_at: '2026-07-20T15:00:00.000Z',
+    updated_at: '2026-07-20T15:30:00.000Z',
+    attendees: [{ name: 'Sam Ortiz' }, { name: 'Priya Nair' }],
+  },
+  {
+    id: 'note-list-customer-call',
+    title: 'Customer call — Northwind',
+    created_at: '2026-07-19T10:00:00.000Z',
+    updated_at: '2026-07-19T10:45:00.000Z',
+    attendees: [{ name: 'You' }, { name: 'Alex Chen' }],
+  },
+  {
+    id: 'note-list-hiring',
+    title: 'Hiring sync',
+    created_at: '2026-07-18T13:00:00.000Z',
+    updated_at: '2026-07-18T13:20:00.000Z',
+    attendees: [{ name: 'Jordan Lee' }],
+  },
+];
+
 export function mockNoteList(): NoteListItem[] {
-  return MOCK_NOTES.map(({ id, title, created_at, updated_at, attendees }) => ({
+  const fromNotes = MOCK_NOTES.map(({ id, title, created_at, updated_at, attendees }) => ({
     id,
     title,
     created_at,
     updated_at,
     attendees,
   }));
+  return [...fromNotes, ...MOCK_LIST_ONLY];
 }
 
 export function getMockNote(id: string): Note | null {
