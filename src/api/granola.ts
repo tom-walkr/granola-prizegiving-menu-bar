@@ -44,17 +44,26 @@ function getApiKey(): string {
   return key;
 }
 
+function isRunningInTauri(): boolean {
+  return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+}
+
+type NativeHttpResponse = { status: number; body: string };
+
 /**
  * Browser fetch hits CORS (Granola's OPTIONS preflight 404s). In Tauri, route
- * through the Rust HTTP plugin instead. Storybook / plain Vite keep global fetch
- * (mock mode, or real API only if CORS somehow works).
+ * through a Rust command (`granola_http_get`) instead. Outside Tauri, only mock
+ * mode works — opening the Vite URL in Safari/Chrome will never reach the real API.
  */
-async function appFetch(input: string, init?: RequestInit): Promise<Response> {
-  if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
-    const { fetch: tauriFetch } = await import('@tauri-apps/plugin-http');
-    return tauriFetch(input, init);
+async function granolaHttpGet(url: string, authorization: string): Promise<NativeHttpResponse> {
+  if (!isRunningInTauri()) {
+    throw new GranolaConfigError(
+      'The Granola API only works inside the menu bar app (npm run dev / the .app). ' +
+        'Opening the Vite URL in a browser hits CORS. Use VITE_USE_MOCK_DATA=true for Storybook or plain Vite.'
+    );
   }
-  return fetch(input, init);
+  const { invoke } = await import('@tauri-apps/api/core');
+  return invoke<NativeHttpResponse>('granola_http_get', { url, authorization });
 }
 
 function sleep(ms: number): Promise<void> {
@@ -88,23 +97,38 @@ class RequestQueue {
 
 const requestQueue = new RequestQueue();
 
-function parseRetryAfterMs(header: string | null): number | null {
-  if (!header) return null;
-  const seconds = Number(header);
-  return Number.isFinite(seconds) ? seconds * 1000 : null;
-}
-
 function backoffDelayMs(attempt: number): number {
   return RETRY_BASE_DELAY_MS * 2 ** attempt;
 }
 
-async function safeErrorMessage(response: Response): Promise<string> {
+function errorBodyMessage(body: string, fallback: string): string {
+  const trimmed = body.trim();
+  if (!trimmed) return fallback;
   try {
-    const body = await response.text();
-    return body || response.statusText;
+    const parsed = JSON.parse(trimmed) as { message?: unknown };
+    if (typeof parsed.message === 'string' && parsed.message.trim()) {
+      return parsed.message.trim();
+    }
   } catch {
-    return response.statusText;
+    // not JSON — fall through
   }
+  return trimmed.length > 280 ? `${trimmed.slice(0, 277)}…` : trimmed;
+}
+
+function stringifyUnknownError(err: unknown): string {
+  if (err instanceof Error && err.message.trim()) return err.message.trim();
+  if (typeof err === 'string' && err.trim()) return err.trim();
+  if (err && typeof err === 'object') {
+    const record = err as { message?: unknown; error?: unknown };
+    if (typeof record.message === 'string' && record.message.trim()) return record.message.trim();
+    if (typeof record.error === 'string' && record.error.trim()) return record.error.trim();
+    try {
+      return JSON.stringify(err);
+    } catch {
+      // ignore
+    }
+  }
+  return '';
 }
 
 /** Fetches one JSON response, respecting the rate limit queue and retrying 429s up to MAX_RETRIES times. */
@@ -112,13 +136,16 @@ async function requestJson<T>(path: string, attempt = 0): Promise<T> {
   const apiKey = getApiKey();
   await requestQueue.acquire();
 
-  const response = await appFetch(`${BASE_URL}${path}`, {
-    headers: { Authorization: `Bearer ${apiKey}` },
-  });
+  let response: NativeHttpResponse;
+  try {
+    response = await granolaHttpGet(`${BASE_URL}${path}`, `Bearer ${apiKey}`);
+  } catch (err) {
+    const detail = stringifyUnknownError(err);
+    throw new Error(detail || "Couldn't reach Granola.");
+  }
 
   if (response.status === 429 && attempt < MAX_RETRIES) {
-    const delay = parseRetryAfterMs(response.headers.get('retry-after')) ?? backoffDelayMs(attempt);
-    await sleep(delay);
+    await sleep(backoffDelayMs(attempt));
     return requestJson<T>(path, attempt + 1);
   }
 
@@ -126,15 +153,28 @@ async function requestJson<T>(path: string, attempt = 0): Promise<T> {
     throw new GranolaApiError(404, 'not found');
   }
 
-  if (!response.ok) {
-    throw new GranolaApiError(response.status, await safeErrorMessage(response));
+  if (response.status < 200 || response.status >= 300) {
+    throw new GranolaApiError(
+      response.status,
+      errorBodyMessage(response.body, `HTTP ${response.status}`)
+    );
   }
 
-  return (await response.json()) as T;
+  try {
+    return JSON.parse(response.body) as T;
+  } catch {
+    throw new Error('Granola returned a non-JSON response.');
+  }
 }
 
 /** User-facing copy for note-list / note-detail load failures. */
 export function describeGranolaLoadError(err: unknown): string {
+  if (
+    err instanceof GranolaConfigError &&
+    /menu bar app|CORS|VITE_USE_MOCK_DATA/i.test(err.message)
+  ) {
+    return 'Open the tray popover (npm run dev), not the Vite URL in a browser.';
+  }
   if (err instanceof GranolaConfigError) {
     return 'Add your API key to .env, then restart the app.';
   }
@@ -147,9 +187,8 @@ export function describeGranolaLoadError(err: unknown): string {
   ) {
     return "Couldn't reach Granola. Check your API key, then restart the app.";
   }
-  if (err instanceof Error && err.message.trim()) {
-    return err.message;
-  }
+  const detail = stringifyUnknownError(err);
+  if (detail) return detail;
   return "Couldn't load notes. Check your API key, then restart the app.";
 }
 

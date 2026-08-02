@@ -16,8 +16,8 @@ second pass.
   targets only.
 - No backend service. The frontend calls `https://public-api.granola.ai/v1`
   with a user-supplied API key. Inside the Tauri shell those requests go
-  through `tauri-plugin-http` (browser `fetch` fails: Granola's CORS
-  preflight returns 404). The Rust side still owns the tray icon, popover
+  through a Rust `granola_http_get` command (browser `fetch` fails: Granola's
+  CORS preflight returns 404). The Rust side still owns the tray icon, popover
   window, and app lifecycle — not business logic.
 - Storybook runs standalone against Vite, not inside the Tauri shell.
 - Composition API + `<script setup>` everywhere. Plain composables/functions
@@ -39,9 +39,11 @@ second pass.
   Mock data only activates when `VITE_USE_MOCK_DATA=true` is set explicitly.
   Vite only reads `.env` at process start — restart `npm run dev` after
   changing the key.
-- In Tauri, `appFetch` uses `@tauri-apps/plugin-http` (scoped to
-  `https://public-api.granola.ai/*` in `capabilities/default.json`). Plain
-  Vite / Storybook keep global `fetch`.
+- In Tauri, `granolaHttpGet` invokes the Rust `granola_http_get` command
+  (reqwest, scoped to `https://public-api.granola.ai/`). Outside Tauri it
+  throws — don't open the Vite URL in a browser for real API calls; use mock
+  mode / Storybook instead. Vite's `server.port` must stay `1420` to match
+  `build.devUrl` in `tauri.conf.json`.
 - `getNote` returns `null` on a 404, it does not throw. A 404 means the note
   is still processing or was never summarized — that's an expected state,
   not an error. Render it as "not ready yet" in the UI, not as a failure.

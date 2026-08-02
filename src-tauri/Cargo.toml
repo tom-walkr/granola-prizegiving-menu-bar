@@ -24,8 +24,5 @@ log = "0.4"
 tauri = { version = "2.11.3", features = ["tray-icon", "image-png", "macos-private-api"] }
 tauri-plugin-log = "2"
 tauri-plugin-positioner = { version = "2.3.3", features = ["tray-icon"] }
-tauri-plugin-http = "^2"
-
-# Raise the tray popover above floating windows / fullscreen spaces.
-[target.'cfg(target_os = "macos")'.dependencies]
-objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "NSWindow"] }
+# Used by granola_api for authenticated GETs (browser fetch hits CORS).
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }

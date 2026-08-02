@@ -39,8 +39,12 @@ First-time Rust compile of the Tauri shell is slow; subsequent runs are much qui
 ```
 npm install
 cp .env.example .env   # add a real Granola API key, or set VITE_USE_MOCK_DATA=true
-npm run dev            # tray icon + popover
+npm run dev            # tray icon + popover — use this, not the Vite URL in a browser
 ```
+
+The real API only works inside the Tauri shell (`npm run dev` or the built `.app`).
+Granola’s CORS preflight 404s, so opening `localhost:1420` in Safari/Chrome will fail;
+use `VITE_USE_MOCK_DATA=true` (or Storybook) for browser-only work.
 
 Other commands: `npm run check` (lint + typecheck), `npm run test`
 (Vitest), `npm run storybook`, `npm run build` (macOS `.app` / DMG).
