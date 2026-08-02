@@ -85,6 +85,42 @@ html:not([data-chrome]) .popover-shell {
   min-width: 0;
 }
 
+.popover-shell__brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.popover-shell__settings {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-ink-muted);
+  cursor: pointer;
+}
+
+.popover-shell__settings svg {
+  display: block;
+  width: 15px;
+  height: 15px;
+}
+
+.popover-shell__settings:hover,
+.popover-shell__settings:focus-visible {
+  background: var(--chrome-row-hover);
+  color: var(--color-ink);
+}
+
 .popover-shell__logo {
   flex-shrink: 0;
   width: 22px;

@@ -39,7 +39,7 @@ async function loadNotes(): Promise<void> {
   }
   if (props.forcedStatus === 'error') {
     isLoading.value = false;
-    error.value = 'Check your API key in .env, then restart the app.';
+    error.value = 'Open Settings… and add your API key, or enable mock data.';
     return;
   }
   if (props.forcedStatus === 'empty') {

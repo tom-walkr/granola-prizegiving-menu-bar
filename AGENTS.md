@@ -34,11 +34,13 @@ second pass.
 
 ## API rules (`src/api/granola.ts`)
 
-- Auth key comes from `VITE_GRANOLA_API_KEY`. If it's missing, functions
-  throw `GranolaConfigError` immediately — no silent fallback to mock data.
-  Mock data only activates when `VITE_USE_MOCK_DATA=true` is set explicitly.
-  Vite only reads `.env` at process start — restart `npm run dev` after
-  changing the key.
+- Auth key + mock toggle live in app Settings (persisted under the OS app
+  config dir via `src-tauri/src/settings.rs`). Open via tray → **Settings…**
+  or the gear in the popover. `VITE_GRANOLA_API_KEY` /
+  `VITE_USE_MOCK_DATA` only seed Settings on first launch and power
+  Storybook; they are not required for day-to-day use.
+- If the key is missing and mock mode is off, functions throw
+  `GranolaConfigError` immediately — no silent fallback to mock data.
 - In Tauri, `granolaHttpGet` invokes the Rust `granola_http_get` command
   (reqwest, scoped to `https://public-api.granola.ai/`). Outside Tauri it
   throws — don't open the Vite URL in a browser for real API calls; use mock
@@ -93,11 +95,13 @@ prizegiving — that would overstate what a two-way split actually supports.
 - Note list polling defaults to every 5 minutes (`NoteSelector.vue`'s
   `pollIntervalMs` prop) plus a debounced refresh on popover focus (wired in
   `App.vue` via `onFocusChanged`), not a refetch on every open.
-- "Launch at Login" lives in the native tray menu (right-click the tray icon)
-  as a `CheckMenuItem` in `src-tauri/src/lib.rs`. The backing stub
-  (`src-tauri/src/launch_at_login.rs`) holds an in-memory bool and doesn't
-  touch a real login-item API yet (`SMAppService` on macOS 13+, or the
-  legacy `SMLoginItemSetEnabled`). Wire the real thing here when it's time.
+- "Launch at Login" and **Settings…** live in the native tray menu
+  (right-click the tray icon). Settings opens a separate window
+  (`label: "settings"`) for the API key and mock-data toggle. The Launch at
+  Login backing stub (`src-tauri/src/launch_at_login.rs`) holds an in-memory
+  bool and doesn't touch a real login-item API yet (`SMAppService` on macOS
+  13+, or the legacy `SMLoginItemSetEnabled`). Wire the real thing here when
+  it's time.
 
 ## Design tokens (`src/styles/`)
 

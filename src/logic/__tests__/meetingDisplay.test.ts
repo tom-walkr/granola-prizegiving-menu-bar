@@ -11,6 +11,7 @@ import {
 describe('formatAttendeeLine', () => {
   it('returns empty string for no attendees', () => {
     expect(formatAttendeeLine([])).toBe('');
+    expect(formatAttendeeLine(undefined)).toBe('');
   });
 
   it('uses first names only', () => {

@@ -30,7 +30,7 @@ macOS only. You'll need:
 - **Node.js 20+** (LTS is fine; npm comes with it)
 - **Rust** via [rustup](https://rustup.rs) — stable, **1.77.2+** (`rustc --version` to check)
 
-You'll also want a [Granola API key](https://docs.granola.ai) from your workspace settings if you're hitting the real API. Otherwise set `VITE_USE_MOCK_DATA=true` and run against the fixtures.
+You'll also want a [Granola API key](https://docs.granola.ai) from your workspace settings if you're hitting the real API. You can paste it in the app under **Settings…** (tray menu or the gear in the popover). Mock fixtures are available from the same window.
 
 First-time Rust compile of the Tauri shell is slow; subsequent runs are much quicker.
 
@@ -38,13 +38,14 @@ First-time Rust compile of the Tauri shell is slow; subsequent runs are much qui
 
 ```
 npm install
-cp .env.example .env   # add a real Granola API key, or set VITE_USE_MOCK_DATA=true
 npm run dev            # tray icon + popover — use this, not the Vite URL in a browser
 ```
 
+Then open **Settings…** (right-click the tray icon, or the gear in the popover), paste your API key, and save. Optional: `cp .env.example .env` to seed Settings on first launch.
+
 The real API only works inside the Tauri shell (`npm run dev` or the built `.app`).
 Granola’s CORS preflight 404s, so opening `localhost:1420` in Safari/Chrome will fail;
-use `VITE_USE_MOCK_DATA=true` (or Storybook) for browser-only work.
+use Settings → Mock data (or Storybook) for browser-only work.
 
 Other commands: `npm run check` (lint + typecheck), `npm run test`
 (Vitest), `npm run storybook`, `npm run build` (macOS `.app` / DMG).

@@ -1,11 +1,17 @@
 import { getMockNote, mockNoteList } from '../mocks/notes';
+import { isSettingsHydrated, settings } from '../settings/store';
+import {
+  normalizeNote,
+  normalizeNoteListItem,
+  type ApiNoteDetail,
+  type ApiNotesListResponse,
+} from './normalize';
 import type {
   GetNoteOptions,
   ListNotesParams,
   ListNotesResult,
   Note,
   NoteListItem,
-  NotesApiResponse,
 } from './types';
 
 const BASE_URL = 'https://public-api.granola.ai/v1';
@@ -30,15 +36,19 @@ export class GranolaApiError extends Error {
 }
 
 function isMockDataEnabled(): boolean {
+  if (isSettingsHydrated()) return settings.useMockData;
+  // Storybook / pre-hydration: Vite env (Storybook forces mock fixtures).
   return import.meta.env.VITE_USE_MOCK_DATA === 'true';
 }
 
 function getApiKey(): string {
-  const key = import.meta.env.VITE_GRANOLA_API_KEY?.trim();
+  const key = isSettingsHydrated()
+    ? settings.apiKey.trim()
+    : import.meta.env.VITE_GRANOLA_API_KEY?.trim();
   if (!key) {
     throw new GranolaConfigError(
-      'VITE_GRANOLA_API_KEY is not set. Add it to your .env file (see .env.example). ' +
-        'Set VITE_USE_MOCK_DATA=true instead if you want to run against fixture data.'
+      'No Granola API key set. Open Settings… from the tray menu (or the gear in the popover) and add one, ' +
+        'or enable mock data.'
     );
   }
   return key;
@@ -175,11 +185,14 @@ export function describeGranolaLoadError(err: unknown): string {
   ) {
     return 'Open the tray popover (npm run dev), not the Vite URL in a browser.';
   }
+  if (err instanceof GranolaConfigError && /API key|mock data|Settings/i.test(err.message)) {
+    return 'Open Settings… and add your API key, or enable mock data.';
+  }
   if (err instanceof GranolaConfigError) {
-    return 'Add your API key to .env, then restart the app.';
+    return 'Open Settings… and add your API key, or enable mock data.';
   }
   if (err instanceof GranolaApiError && (err.status === 401 || err.status === 403)) {
-    return 'Check your API key in .env, then restart the app.';
+    return 'Check your API key in Settings…';
   }
   if (
     err instanceof TypeError ||
@@ -198,7 +211,8 @@ function buildNotesQuery(params: ListNotesParams): string {
   if (params.created_before) query.set('created_before', params.created_before);
   if (params.updated_after) query.set('updated_after', params.updated_after);
   if (params.cursor) query.set('cursor', params.cursor);
-  if (params.limit) query.set('limit', String(params.limit));
+  // Granola's public API uses page_size (max 30), not limit.
+  if (params.limit) query.set('page_size', String(Math.min(params.limit, 30)));
   const serialized = query.toString();
   return serialized ? `?${serialized}` : '';
 }
@@ -213,10 +227,10 @@ export async function listNotes(params: ListNotesParams = {}): Promise<ListNotes
     return { notes: mockNoteList(), hasMore: false, cursor: null };
   }
 
-  const data = await requestJson<NotesApiResponse>(`/notes${buildNotesQuery(params)}`);
+  const data = await requestJson<ApiNotesListResponse>(`/notes${buildNotesQuery(params)}`);
   return {
-    notes: data.notes,
-    hasMore: data.has_more,
+    notes: (data.notes ?? []).map(normalizeNoteListItem),
+    hasMore: Boolean(data.hasMore),
     cursor: data.cursor ?? null,
   };
 }
@@ -250,7 +264,10 @@ export async function getNote(id: string, options: GetNoteOptions = {}): Promise
 
   const query = options.includeTranscript ? '?include=transcript' : '';
   try {
-    return await requestJson<Note>(`/notes/${encodeURIComponent(id)}${query}`);
+    const raw = await requestJson<ApiNoteDetail>(
+      `/notes/${encodeURIComponent(id)}${query}`
+    );
+    return normalizeNote(raw);
   } catch (error) {
     if (error instanceof GranolaApiError && error.status === 404) {
       return null;

@@ -34,9 +34,9 @@ export function formatMeetingTime(iso: string): string {
  * Granola attendee line: first names, then "& N others" once the list grows.
  * Examples: "Alice", "Alice, Bob", "Alice, Bob & 2 others".
  */
-export function formatAttendeeLine(attendees: Attendee[], maxNamed = 2): string {
-  const names = attendees
-    .map((a) => a.name.trim())
+export function formatAttendeeLine(attendees: Attendee[] | null | undefined, maxNamed = 2): string {
+  const names = (attendees ?? [])
+    .map((a) => (a.name ?? '').trim())
     .filter(Boolean)
     .map(firstName);
 

@@ -26,6 +26,22 @@
         "skipTaskbar": true,
         "visible": false,
         "shadow": true
+      },
+      {
+        "label": "settings",
+        "title": "Settings",
+        "url": "index.html",
+        "width": 520,
+        "height": 640,
+        "resizable": false,
+        "fullscreen": false,
+        "decorations": false,
+        "transparent": false,
+        "alwaysOnTop": false,
+        "skipTaskbar": false,
+        "visible": false,
+        "center": true,
+        "shadow": true
       }
     ],
     "security": {

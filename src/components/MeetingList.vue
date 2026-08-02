@@ -156,7 +156,7 @@ onUnmounted(() => clearCollapseTimer());
               :time="formatMeetingTime(row.note.created_at)"
               :initials="initialsFromTitle(row.note.title)"
               :selected="row.note.id === selectedId"
-              :shared="row.note.attendees.length > 1"
+              :shared="(row.note.attendees?.length ?? 0) > 1"
               @select="$emit('select', row.note.id)"
             />
           </div>

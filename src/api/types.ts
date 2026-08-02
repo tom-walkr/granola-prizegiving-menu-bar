@@ -59,13 +59,6 @@ export interface ListNotesResult {
   cursor: string | null;
 }
 
-/** Raw shape returned by GET /notes, before we map it to ListNotesResult. */
-export interface NotesApiResponse {
-  notes: NoteListItem[];
-  has_more: boolean;
-  cursor: string | null;
-}
-
 export interface GetNoteOptions {
   includeTranscript?: boolean;
 }
