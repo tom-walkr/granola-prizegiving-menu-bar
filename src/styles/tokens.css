@@ -1,0 +1,389 @@
+/**
+ * Granola-aligned design tokens ("oats").
+ *
+ * Sourced from the public granola.ai CSS (Feb 2026 rebrand / Ragged Edge),
+ * cross-checked against Granola's brand write-up:
+ * https://www.granola.ai/blog/a-new-look-for-granola
+ *
+ * Philosophy: warm parchment surfaces, olive brand voltage, yellow highlighter
+ * accent, hairline warm-brown borders. No cool greys, no pure black ink,
+ * shadows almost invisible — hierarchy comes from surface temperature.
+ *
+ * Typefaces on granola.ai are KMR Melange Grotesk (UI) + Quadrant Notepad
+ * (display). Those are licensed brand fonts and are not bundled here.
+ * The macOS Granola app itself moved to SF Pro for native chrome — so this
+ * menu-bar app follows that product choice for UI, and uses a serif display
+ * stack that approximates Quadrant when the brand face isn't installed.
+ */
+
+:root {
+  /* ------------------------------------------------------------------ */
+  /* Primitive palette — --color-oats-*                                 */
+  /* ------------------------------------------------------------------ */
+
+  --color-oats-white: #fff;
+  --color-oats-black: #000;
+
+  --color-oats-neutral-50: #fcfcf8;
+  --color-oats-neutral-100: #f7f7f2;
+  --color-oats-neutral-150: #f2f2ec;
+  --color-oats-neutral-200: #eaebe5;
+  --color-oats-neutral-300: #d5d5d2;
+  --color-oats-neutral-400: #acada8;
+  --color-oats-neutral-450: #9e9e99;
+  --color-oats-neutral-500: #818179;
+  --color-oats-neutral-600: #72726e;
+  --color-oats-neutral-700: #4e4d4b;
+  --color-oats-neutral-750: #363635;
+  --color-oats-neutral-800: #292929;
+  --color-oats-neutral-900: #212121;
+  --color-oats-neutral-950: #1e1e1e;
+
+  /* Warm off-black / off-white at low opacity — hairlines & soft fills */
+  --color-oats-off-black-a6: #625a220f;
+  --color-oats-off-black-a12: #56512e1f;
+  --color-oats-off-black-a20: #47432a33;
+  --color-oats-off-white-a6: #ffffff0f;
+  --color-oats-off-white-a15: #ffffff26;
+  --color-oats-off-white-a20: #fff3;
+
+  /* Olive brand ladder */
+  --color-oats-green-50: #f2f6e1;
+  --color-oats-green-100: #e5eacd;
+  --color-oats-green-200: #d1e043;
+  --color-oats-green-300: #b2c248;
+  --color-oats-green-400: #788c15;
+  --color-oats-green-500: #5b6f00;
+  --color-oats-green-600: #434625;
+
+  /* Yellow highlighter */
+  --color-oats-yellow-100: #ffeaa6;
+  --color-oats-yellow-200: #febe29;
+  --color-oats-yellow-300: #ed9212;
+  --color-oats-yellow-400: #8b4e23;
+
+  /* Coral / danger */
+  --color-oats-red-50: #ffe7e2;
+  --color-oats-red-100: #f8cec5;
+  --color-oats-red-200: #f29e8b;
+  --color-oats-red-300: #e95d3d;
+  --color-oats-red-400: #bd4a30;
+
+  /* Supporting accents (data dots, tint panels, AI-enhancement gradient) */
+  --color-oats-blue-50: #eaf4fe;
+  --color-oats-blue-100: #d2e4f8;
+  --color-oats-blue-200: #b8d5ff;
+  --color-oats-blue-300: #4691e2;
+  --color-oats-blue-400: #3e49b8;
+
+  --color-oats-gold-50: #f8f1ca;
+  --color-oats-gold-100: #ede1a1;
+  --color-oats-gold-400: #40351a;
+
+  --color-oats-pink-100: #ffdef6;
+  --color-oats-pink-200: #ffbcef;
+  --color-oats-pink-300: #ff91e0;
+  --color-oats-pink-400: #a42962;
+
+  --color-oats-purple-100: #e8e4f3;
+  --color-oats-purple-200: #cebef8;
+  --color-oats-purple-400: #564391;
+
+  /* ------------------------------------------------------------------ */
+  /* Semantic roles — light (default). Matches granola.ai :root oats.   */
+  /* ------------------------------------------------------------------ */
+
+  --oats-surface: var(--color-oats-neutral-100);
+  --oats-surface-raised: var(--color-oats-white);
+  --oats-surface-elevated: var(--color-oats-white);
+  --oats-surface-sunken: var(--color-oats-neutral-150);
+  --oats-surface-overlay: var(--color-oats-neutral-500);
+  --oats-surface-tooltip: var(--color-oats-neutral-750);
+  --oats-surface-accent-green: var(--color-oats-green-50);
+  --oats-surface-accent-blue: var(--color-oats-blue-50);
+  --oats-surface-accent-purple: #f3f0fa;
+  --oats-surface-tint-accent: var(--color-oats-green-100);
+  --oats-surface-tint-neutral: var(--color-oats-off-black-a6);
+
+  --oats-ink-primary: var(--color-oats-neutral-800);
+  --oats-ink-primary-static: var(--color-oats-neutral-800);
+  --oats-ink-primary-inverse: var(--color-oats-neutral-50);
+  --oats-ink-primary-inverse-static: var(--color-oats-neutral-50);
+  --oats-ink-secondary: var(--color-oats-neutral-600);
+  --oats-ink-secondary-static: var(--color-oats-neutral-600);
+  --oats-ink-secondary-strong: var(--color-oats-neutral-700);
+  --oats-ink-secondary-strong-static: var(--color-oats-neutral-700);
+  --oats-ink-secondary-inverse: var(--color-oats-neutral-450);
+  --oats-ink-secondary-inverse-static: var(--color-oats-neutral-450);
+  --oats-ink-secondary-strong-inverse-static: var(--color-oats-neutral-400);
+  --oats-ink-tertiary: var(--color-oats-neutral-400);
+  --oats-ink-tertiary-static: var(--color-oats-neutral-400);
+  --oats-ink-accent: var(--color-oats-green-400);
+  --oats-ink-accent-strong: var(--color-oats-green-500);
+  --oats-ink-danger: var(--color-oats-red-400);
+
+  --oats-fill-primary: var(--color-oats-neutral-800);
+  --oats-fill-primary-hover: var(--color-oats-neutral-700);
+  --oats-fill-accent: var(--color-oats-green-500);
+  --oats-fill-accent-hover: #4c5616;
+  --oats-fill-accent-highlight: #788c1526;
+  --oats-fill-accent-highlight-strong: #5b6f0033;
+  --oats-fill-danger: var(--color-oats-red-300);
+  --oats-fill-danger-hover: var(--color-oats-red-400);
+  --oats-fill-disabled: var(--color-oats-neutral-300);
+  --oats-fill-neutral: var(--color-oats-neutral-400);
+  --oats-fill-input: var(--color-oats-white);
+  --oats-fill-input-disabled: var(--color-oats-neutral-100);
+  --oats-fill-soft: var(--color-oats-off-black-a6);
+  --oats-fill-soft-hover: var(--color-oats-off-black-a12);
+  --oats-fill-soft-opaque: var(--color-oats-neutral-200);
+  --oats-fill-soft-opaque-hover: var(--color-oats-neutral-300);
+  --oats-fill-highlight: var(--color-oats-off-black-a6);
+  --oats-fill-highlight-strong: var(--color-oats-off-black-a12);
+  --oats-fill-highlight-inverse: var(--color-oats-off-white-a6);
+  --oats-fill-highlight-strong-inverse: var(--color-oats-off-white-a15);
+
+  --oats-border-hairline: var(--color-oats-off-black-a20);
+  --oats-border-focus: #b2c24899;
+
+  --oats-system-dancing-bars: #74bd00;
+
+  /* ------------------------------------------------------------------ */
+  /* App aliases — prefer these in components                           */
+  /* ------------------------------------------------------------------ */
+
+  --color-canvas: var(--oats-surface);
+  --color-surface: var(--oats-surface);
+  --color-surface-raised: var(--oats-surface-raised);
+  --color-surface-elevated: var(--oats-surface-elevated);
+  --color-surface-sunken: var(--oats-surface-sunken);
+  --color-surface-tint: var(--oats-surface-tint-accent);
+
+  --color-ink: var(--oats-ink-primary);
+  --color-ink-strong: var(--oats-ink-secondary-strong);
+  --color-ink-muted: var(--oats-ink-secondary);
+  --color-ink-quiet: var(--oats-ink-tertiary);
+  --color-ink-inverse: var(--oats-ink-primary-inverse);
+  --color-ink-accent: var(--oats-ink-accent);
+  --color-ink-accent-strong: var(--oats-ink-accent-strong);
+  --color-ink-danger: var(--oats-ink-danger);
+
+  --color-fill-primary: var(--oats-fill-primary);
+  --color-fill-accent: var(--oats-fill-accent);
+  --color-fill-accent-hover: var(--oats-fill-accent-hover);
+  --color-fill-danger: var(--oats-fill-danger);
+  --color-fill-soft: var(--oats-fill-soft-opaque);
+  --color-fill-highlight: var(--color-oats-yellow-200);
+
+  --color-border: var(--oats-border-hairline);
+  --color-border-strong: var(--color-oats-neutral-300);
+  --color-border-focus: var(--oats-border-focus);
+  --color-stroke: var(--color-oats-neutral-300);
+
+  /* Data / award dots — Granola content-analysis palette */
+  --color-dot-olive: var(--color-oats-green-300);
+  --color-dot-blue: var(--color-oats-blue-200);
+  --color-dot-gold: var(--color-oats-gold-100);
+  --color-dot-coral: var(--color-oats-red-300);
+  --color-dot-amber: var(--color-oats-yellow-200);
+
+  /* AI-enhancement gradient stops (marketing "deep charcoal" rainbow) */
+  --gradient-ai-ink: linear-gradient(
+    90deg,
+    var(--color-oats-neutral-800) 0%,
+    var(--color-oats-neutral-800) 33.33%,
+    var(--color-oats-yellow-200) 40%,
+    var(--color-oats-pink-300) 45%,
+    var(--color-oats-purple-200) 50%,
+    var(--color-oats-blue-100) 55%,
+    var(--color-oats-green-200) 60%,
+    transparent 66.67%
+  );
+
+  /* ------------------------------------------------------------------ */
+  /* Typography                                                         */
+  /* ------------------------------------------------------------------ */
+
+  /*
+   * UI: SF Pro / system — matches Granola's macOS app (Inter → SF Pro, Jan 2026).
+   * Display: Quadrant if installed, else macOS editorial serifs, else Georgia.
+   * Open-source substitutes if you later self-host fonts:
+   *   display → Fraunces; UI → Instrument Sans or Geist.
+   */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
+    system-ui, Roboto, Helvetica, Arial, sans-serif;
+  --font-display: "Quadrant Notepad", Quadrant, "New York", "Iowan Old Style",
+    "Apple Garamond", Georgia, "Times New Roman", Times, serif;
+  --font-mono: "SF Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+
+  --font-weight-light: 300;
+  --font-weight-book: 430;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Marketing display scale (Quadrant, weight 400 throughout) */
+  --text-display-xl-size: 68px;
+  --text-display-xl-leading: 1;
+  --text-display-xl-tracking: -1.02px;
+
+  --text-display-lg-size: 48px;
+  --text-display-lg-leading: 1;
+  --text-display-lg-tracking: -0.72px;
+
+  --text-display-md-size: 36px;
+  --text-display-md-leading: 1.11;
+  --text-display-md-tracking: -0.54px;
+
+  --text-heading-md-size: 24px;
+  --text-heading-md-leading: 1.33;
+  --text-heading-md-tracking: 0;
+
+  --text-heading-sm-size: 20px;
+  --text-heading-sm-leading: 1.4;
+  --text-heading-sm-tracking: -0.3px;
+
+  /* Product / popover UI scale (Melange-equivalent; granola.ai product sizes) */
+  --text-lg-size: 16px;
+  --text-lg-leading: 20px;
+  --text-lg-tracking: 0.01em;
+
+  --text-md-size: 14px;
+  --text-md-leading: 18px;
+  --text-md-tracking: 0.01em;
+
+  --text-sm-size: 13px;
+  --text-sm-leading: 16px;
+  --text-sm-tracking: 0.01em;
+
+  --text-xs-size: 12px;
+  --text-xs-leading: 16px;
+  --text-xs-tracking: 0.02em;
+
+  --text-2xs-size: 11px;
+
+  /* Popover-friendly award title (slab, restrained) */
+  --text-award-title-size: 18px;
+  --text-award-title-leading: 1.25;
+  --text-award-title-tracking: -0.02em;
+
+  /* ------------------------------------------------------------------ */
+  /* Spacing (4px base)                                                 */
+  /* ------------------------------------------------------------------ */
+
+  --space-xxs: 2px;
+  --space-xs: 4px;
+  --space-sm: 6px;
+  --space-base: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+  --space-3xl: 48px;
+  --space-4xl: 64px;
+
+  /* ------------------------------------------------------------------ */
+  /* Radius                                                             */
+  /* ------------------------------------------------------------------ */
+
+  --radius: 0.5rem; /* 8px — cards / inputs */
+  --radius-xs: 0.125rem; /* 2px — highlighter mark corners */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: var(--radius);
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-3xl: 24px;
+  --radius-pill: 9999px;
+
+  /* ------------------------------------------------------------------ */
+  /* Elevation — deliberately near-invisible                            */
+  /* ------------------------------------------------------------------ */
+
+  --shadow-hairline: 0 0 0 1px rgba(0, 0, 0, 0.15);
+  --shadow-ambient: 0 0 36px 0 rgba(0, 0, 0, 0.03);
+  --shadow-inset-soft: inset 0 0 2px rgba(0, 0, 0, 0.03);
+  --shadow-popover: 0 8px 12px -4px rgba(0, 0, 0, 0.05),
+    0 0 0 1px var(--oats-border-hairline);
+  --shadow-focus-ring: 0 0 0 6px #47432a0d;
+
+  /* ------------------------------------------------------------------ */
+  /* Motion                                                             */
+  /* ------------------------------------------------------------------ */
+
+  --duration-instant: 75ms;
+  --duration-fast: 100ms;
+  --duration-normal: 150ms;
+  --duration-moderate: 200ms;
+  --duration-slow: 300ms;
+  --duration-deliberate: 500ms;
+
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-expo: cubic-bezier(0.87, 0, 0.13, 1);
+
+  /* ------------------------------------------------------------------ */
+  /* Layout (popover shell)                                             */
+  /* ------------------------------------------------------------------ */
+
+  --popover-width: 360px;
+  --popover-max-height: 520px;
+  --popover-padding: var(--space-lg);
+  --control-height: 32px;
+}
+
+/* Dark theme overrides — present on granola.ai as html.dark. Optional here;
+   the menu bar stays light by default to match the notepad metaphor. */
+html.dark {
+  --oats-surface: var(--color-oats-neutral-800);
+  --oats-surface-raised: #313130;
+  --oats-surface-elevated: var(--color-oats-neutral-750);
+  --oats-surface-sunken: var(--color-oats-neutral-900);
+  --oats-surface-tooltip: var(--color-oats-neutral-750);
+  --oats-surface-accent-green: #313225;
+  --oats-surface-accent-blue: #2e303b;
+  --oats-surface-accent-purple: #34313e;
+  --oats-surface-overlay: var(--color-oats-neutral-700);
+  --oats-surface-tint-neutral: var(--color-oats-off-white-a6);
+  --oats-surface-tint-accent: var(--color-oats-green-600);
+
+  --oats-ink-primary: var(--color-oats-neutral-50);
+  --oats-ink-secondary-strong: var(--color-oats-neutral-400);
+  --oats-ink-secondary: var(--color-oats-neutral-450);
+  --oats-ink-tertiary: var(--color-oats-neutral-500);
+  --oats-ink-primary-inverse: var(--color-oats-neutral-800);
+  --oats-ink-secondary-inverse: var(--color-oats-neutral-600);
+  --oats-ink-accent: var(--color-oats-green-400);
+  --oats-ink-accent-strong: var(--color-oats-green-300);
+  --oats-ink-danger: #ec7558;
+
+  --oats-fill-primary: var(--color-oats-neutral-200);
+  --oats-fill-primary-hover: var(--color-oats-neutral-400);
+  --oats-fill-accent: var(--color-oats-green-500);
+  --oats-fill-accent-hover: var(--color-oats-green-400);
+  --oats-fill-danger: var(--color-oats-red-400);
+  --oats-fill-danger-hover: var(--color-oats-red-300);
+  --oats-fill-neutral: var(--color-oats-neutral-600);
+  --oats-fill-disabled: var(--color-oats-neutral-700);
+  --oats-fill-highlight: var(--color-oats-off-white-a6);
+  --oats-fill-highlight-strong: var(--color-oats-off-white-a15);
+  --oats-fill-highlight-inverse: var(--color-oats-off-black-a6);
+  --oats-fill-highlight-strong-inverse: var(--color-oats-off-black-a12);
+  --oats-fill-soft: var(--color-oats-off-white-a6);
+  --oats-fill-soft-hover: var(--color-oats-off-white-a15);
+  --oats-fill-soft-opaque: var(--color-oats-neutral-750);
+  --oats-fill-soft-opaque-hover: var(--color-oats-neutral-600);
+  --oats-fill-accent-highlight: #788c1533;
+  --oats-fill-accent-highlight-strong: #b2c24833;
+  --oats-fill-input: var(--color-oats-neutral-750);
+  --oats-fill-input-disabled: var(--color-oats-neutral-750);
+
+  --oats-border-hairline: var(--color-oats-off-white-a15);
+  --oats-border-focus: #b2c24899;
+
+  --shadow-popover: 0 8px 12px -4px rgba(0, 0, 0, 0.35),
+    0 0 0 1px var(--oats-border-hairline);
+}

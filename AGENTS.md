@@ -88,12 +88,19 @@ prizegiving — that would overstate what a two-way split actually supports.
   (`SMAppService` on macOS 13+, or the legacy `SMLoginItemSetEnabled`). Wire
   the real thing here when it's time, the frontend toggle already exists.
 
-## No styling yet
+## Design tokens (`src/styles/`)
 
-Components render plain, semantic markup with no classes, colors, or
-layout beyond `PopoverShell`'s header/content slots. That's intentional —
-this pass is about correct data flow and component boundaries, not
-appearance. Don't add styling unless you're doing the design pass.
+Granola-aligned tokens live in `src/styles/tokens.css` (the public
+`oats` palette + semantic roles scraped from granola.ai), with minimal
+document defaults in `base.css`. Prefer semantic aliases
+(`--color-canvas`, `--color-ink`, `--color-fill-accent`, `--font-display`)
+over raw `--color-oats-*` in components.
+
+Components still render mostly unstyled markup beyond those document
+defaults — the visual pass should consume the tokens, not invent new
+hexes. Don't redistribute Melange/Quadrant; UI uses the system stack
+(Granola's own macOS app uses SF Pro), display uses a Quadrant-like
+serif fallback stack.
 
 ## Storybook
 

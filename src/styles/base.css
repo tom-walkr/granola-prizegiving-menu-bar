@@ -1,0 +1,57 @@
+/**
+ * Minimal document defaults using oats tokens.
+ * Component styling comes later — this only establishes the canvas.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color: var(--color-ink);
+  background: var(--color-canvas);
+  font-family: var(--font-sans);
+  font-size: var(--text-md-size);
+  line-height: var(--text-md-leading);
+  letter-spacing: var(--text-md-tracking);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  min-width: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-ink);
+}
+
+::selection {
+  background: var(--color-fill-highlight);
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-oats-green-300);
+  outline-offset: 2px;
+}
