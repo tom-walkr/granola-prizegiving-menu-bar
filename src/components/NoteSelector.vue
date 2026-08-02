@@ -51,8 +51,27 @@ const sortedNotes = computed(() =>
   [...notes.value].sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0))
 );
 
-const recentNotes = computed(() => sortedNotes.value.slice(0, RECENT_COUNT));
-const olderCount = computed(() => Math.max(0, sortedNotes.value.length - RECENT_COUNT));
+/**
+ * Latest meetings for the home stack — always includes the currently viewed
+ * note so the collapsed stack never tucks down to an empty list.
+ */
+const recentNotes = computed(() => {
+  const newest = sortedNotes.value;
+  if (newest.length === 0) return [];
+
+  const selectedId = props.selectedId;
+  const selected = selectedId ? newest.find((n) => n.id === selectedId) : undefined;
+  if (!selected) return newest.slice(0, RECENT_COUNT);
+
+  const others = newest.filter((n) => n.id !== selected.id).slice(0, Math.max(0, RECENT_COUNT - 1));
+  // Selected leads so it stays the stack face when collapsed.
+  return [selected, ...others];
+});
+
+const recentIds = computed(() => new Set(recentNotes.value.map((n) => n.id)));
+const olderCount = computed(() =>
+  Math.max(0, sortedNotes.value.filter((n) => !recentIds.value.has(n.id)).length)
+);
 const canBrowse = computed(() => olderCount.value > 0);
 
 watch(
@@ -158,6 +177,7 @@ function closeBrowse(): void {
 
 function onSelect(noteId: string): void {
   emit('select', noteId);
+  void probePrizegiving([noteId]);
   if (view.value === 'browse') closeBrowse();
 }
 
@@ -221,19 +241,18 @@ defineExpose({ refresh });
         </div>
 
         <div v-else key="browse" class="note-selector__page note-selector__page--browse">
-          <div class="note-selector__browse-bar">
-            <button
-              type="button"
-              class="note-selector__back"
-              aria-label="Back to recent meetings"
-              @click="closeBrowse"
-              v-html="chevronLeft"
-            />
-            <div class="note-selector__browse-heading">
-              <p class="note-selector__eyebrow">All meetings</p>
-              <p class="note-selector__browse-count">{{ sortedNotes.length }}</p>
-            </div>
-          </div>
+          <button
+            type="button"
+            class="note-selector__browse note-selector__browse--back"
+            aria-label="Back to recent meetings"
+            @click="closeBrowse"
+          >
+            <span class="note-selector__browse-label">
+              <span class="note-selector__browse-icon" aria-hidden="true" v-html="chevronLeft" />
+              Back to recent meetings
+            </span>
+            <span class="note-selector__browse-meta">{{ sortedNotes.length }}</span>
+          </button>
 
           <div class="note-selector__browse-scroll">
             <MeetingList
@@ -293,7 +312,7 @@ defineExpose({ refresh });
 
 .note-selector__browse {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-md);
   width: 100%;
@@ -308,6 +327,10 @@ defineExpose({ refresh });
   transition: background-color var(--duration-fast) var(--ease-out);
 }
 
+.note-selector__browse--back {
+  margin: 0;
+}
+
 .note-selector__browse:hover,
 .note-selector__browse:focus-visible {
   background: var(--oats-fill-soft);
@@ -319,75 +342,31 @@ defineExpose({ refresh });
 }
 
 .note-selector__browse-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-width: 0;
   font-size: var(--text-sm-size);
   font-weight: var(--font-weight-medium);
   line-height: var(--text-sm-leading);
 }
 
+.note-selector__browse-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  color: var(--color-ink-muted);
+}
+
+.note-selector__browse-icon :deep(svg) {
+  display: block;
+  width: 14px;
+  height: 14px;
+}
+
 .note-selector__browse-meta {
   flex-shrink: 0;
-  font-size: var(--text-xs-size);
-  line-height: var(--text-xs-leading);
-  color: var(--color-ink-quiet);
-  font-variant-numeric: tabular-nums;
-}
-
-.note-selector__browse-bar {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  min-width: 0;
-  padding-right: var(--space-md);
-}
-
-.note-selector__back {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 28px;
-  height: 28px;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--color-ink-muted);
-  cursor: pointer;
-}
-
-.note-selector__back:hover,
-.note-selector__back:focus-visible {
-  background: var(--chrome-row-hover);
-  color: var(--color-ink);
-}
-
-.note-selector__back:focus-visible {
-  outline: 2px solid var(--color-border-focus);
-  outline-offset: 1px;
-}
-
-.note-selector__back :deep(svg) {
-  display: block;
-  width: 16px;
-  height: 16px;
-}
-
-.note-selector__browse-heading {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-md);
-  flex: 1;
-  min-width: 0;
-}
-
-.note-selector__browse-heading .note-selector__eyebrow {
-  padding: 0;
-}
-
-.note-selector__browse-count {
-  margin: 0;
   font-size: var(--text-xs-size);
   line-height: var(--text-xs-leading);
   color: var(--color-ink-quiet);

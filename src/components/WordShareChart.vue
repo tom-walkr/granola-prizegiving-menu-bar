@@ -46,7 +46,14 @@ const totalValue = computed(() =>
     : props.entries.reduce((sum, entry) => sum + entry.words, 0)
 );
 
+/** Whether the active mode has something to draw in the bar. */
 const hasData = computed(() => sortedEntries.value.length > 0 && totalValue.value > 0);
+
+/**
+ * Keep the control clickable even when the active mode is empty (e.g. words
+ * exist but talk-time is 0) — otherwise one click into that mode freezes it.
+ */
+const canToggle = computed(() => props.entries.length > 0);
 
 function colorFor(entry: WordShareEntry): string {
   return colorByKey.value.get(entry.key) ?? DOT_COLORS[0];
@@ -86,7 +93,7 @@ function clearTimers(): void {
 }
 
 async function toggleMode(): Promise<void> {
-  if (!hasData.value) return;
+  if (!canToggle.value) return;
 
   clearTimers();
   mode.value = mode.value === 'words' ? 'time' : 'words';
@@ -114,11 +121,11 @@ onUnmounted(() => clearTimers());
 <template>
   <section
     class="word-share"
-    :class="{ 'is-interactive': hasData }"
-    :role="hasData ? 'button' : undefined"
-    :tabindex="hasData ? 0 : undefined"
+    :class="{ 'is-interactive': canToggle }"
+    :role="canToggle ? 'button' : undefined"
+    :tabindex="canToggle ? 0 : undefined"
     :aria-label="
-      hasData
+      canToggle
         ? mode === 'words'
           ? 'Words per person. Click to show talk time.'
           : 'Talk time per person. Click to show words.'

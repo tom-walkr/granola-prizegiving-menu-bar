@@ -51,8 +51,15 @@ const flatNotes = computed(() => {
   return groupNotesByDate(props.notes).flatMap((g) => g.notes);
 });
 
+const selectedInList = computed(() =>
+  Boolean(props.selectedId && flatNotes.value.some((note) => note.id === props.selectedId))
+);
+
 const canCollapse = computed(
-  () => props.collapsible && Boolean(props.selectedId) && flatNotes.value.length > 1
+  () =>
+    props.collapsible &&
+    selectedInList.value &&
+    flatNotes.value.length > 1
 );
 
 /** Stay open while the pointer or focus is in the list — including right after a click. */
@@ -129,7 +136,7 @@ function onFocusOut(event: FocusEvent): void {
 }
 
 function isTucked(row: ListRow): boolean {
-  if (!collapsed.value) return false;
+  if (!collapsed.value || !selectedInList.value) return false;
   if (row.kind === 'header') return true;
   return row.note.id !== props.selectedId;
 }
