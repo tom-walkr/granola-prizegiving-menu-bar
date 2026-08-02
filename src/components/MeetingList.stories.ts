@@ -54,9 +54,18 @@ const granolaLikeNotes: NoteListItem[] = [
 const meta: Meta<typeof MeetingList> = {
   component: MeetingList,
   title: 'Design System/MeetingList',
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'After a meeting is selected, the list collapses into a stack. Hover or focus the stack to fan meetings back out and switch.',
+      },
+    },
+  },
   decorators: [
     () => ({
-      template: '<div style="max-width: 420px; padding: 8px 4px;"><story /></div>',
+      template:
+        '<div style="max-width: 420px; padding: 16px 8px; min-height: 280px;"><story /></div>',
     }),
   ],
 };
@@ -65,7 +74,16 @@ export default meta;
 
 type Story = StoryObj<typeof MeetingList>;
 
-export const GranolaList: Story = {
+export const BrowseBeforeSelection: Story = {
+  name: 'Browse (no selection)',
+  args: {
+    notes: granolaLikeNotes,
+    selectedId: null,
+  },
+};
+
+export const CollapsedStack: Story = {
+  name: 'Collapsed stack',
   render: () => ({
     components: { MeetingList },
     setup() {
@@ -73,18 +91,38 @@ export const GranolaList: Story = {
       return { notes: granolaLikeNotes, selectedId };
     },
     template: `
-      <MeetingList
-        :notes="notes"
-        :selected-id="selectedId"
-        @select="selectedId = $event"
-      />
+      <div>
+        <p style="margin: 0 0 12px; font: 12px/1.4 system-ui; color: #72726e;">
+          Leave the list to collapse · hover to expand
+        </p>
+        <MeetingList
+          :notes="notes"
+          :selected-id="selectedId"
+          @select="selectedId = $event"
+        />
+      </div>
     `,
   }),
 };
 
-export const EmptyDayGrouping: Story = {
-  args: {
-    notes: granolaLikeNotes.slice(0, 2),
-    selectedId: null,
-  },
+export const Interactive: Story = {
+  render: () => ({
+    components: { MeetingList },
+    setup() {
+      const selectedId = ref<string | null>(null);
+      return { notes: granolaLikeNotes, selectedId };
+    },
+    template: `
+      <div>
+        <p style="margin: 0 0 12px; font: 12px/1.4 system-ui; color: #72726e;">
+          Pick a meeting — then move the pointer away to see the stack.
+        </p>
+        <MeetingList
+          :notes="notes"
+          :selected-id="selectedId"
+          @select="selectedId = $event"
+        />
+      </div>
+    `,
+  }),
 };
