@@ -51,7 +51,11 @@ onMounted(async () => {
       </label>
     </template>
 
-    <NoteSelector ref="noteSelector" @select="selectedNoteId = $event" />
+    <NoteSelector
+      ref="noteSelector"
+      :selected-id="selectedNoteId"
+      @select="selectedNoteId = $event"
+    />
     <AwardsBoard v-if="selectedNoteId" :note-id="selectedNoteId" />
   </PopoverShell>
 </template>

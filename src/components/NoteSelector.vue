@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { listAllNotes } from '../api/granola';
 import type { NoteListItem } from '../api/types';
+import MeetingList from './MeetingList.vue';
 
 const DEFAULT_POLL_INTERVAL_MS = 5 * 60 * 1000;
 // Ignore refresh() calls (e.g. from rapid popover open/close) this soon after the last fetch.
@@ -9,11 +10,12 @@ const MIN_REFRESH_GAP_MS = 2000;
 
 const props = withDefaults(
   defineProps<{
+    selectedId?: string | null;
     pollIntervalMs?: number;
     /** Storybook-only: pins a state that isn't otherwise reachable from fixture data. Real usage never sets this. */
     forcedStatus?: 'loading' | 'error' | 'empty';
   }>(),
-  { pollIntervalMs: DEFAULT_POLL_INTERVAL_MS }
+  { pollIntervalMs: DEFAULT_POLL_INTERVAL_MS, selectedId: null }
 );
 
 const emit = defineEmits<{ select: [noteId: string] }>();
@@ -24,6 +26,8 @@ const error = ref<string | null>(null);
 
 let pollHandle: ReturnType<typeof setInterval> | undefined;
 let lastFetchAt = 0;
+
+const showList = computed(() => !isLoading.value && !error.value && notes.value.length > 0);
 
 async function loadNotes(): Promise<void> {
   if (props.forcedStatus === 'loading') {
@@ -71,18 +75,25 @@ defineExpose({ refresh });
 </script>
 
 <template>
-  <section aria-label="Recent notes">
-    <p v-if="isLoading && notes.length === 0">Loading notes…</p>
-    <p v-else-if="error" role="alert">{{ error }}</p>
-    <p v-else-if="notes.length === 0">No notes found.</p>
-    <ul v-else>
-      <li v-for="note in notes" :key="note.id">
-        <button type="button" @click="emit('select', note.id)">
-          <span>{{ note.title }}</span>
-          <span>{{ new Date(note.created_at).toLocaleDateString() }}</span>
-          <span>{{ note.attendees.length }} attendees</span>
-        </button>
-      </li>
-    </ul>
+  <section class="note-selector" aria-label="Recent notes">
+    <p v-if="isLoading && notes.length === 0" class="note-selector__status">Loading notes…</p>
+    <p v-else-if="error" class="note-selector__status" role="alert">{{ error }}</p>
+    <p v-else-if="notes.length === 0" class="note-selector__status">No notes found.</p>
+    <MeetingList
+      v-else-if="showList"
+      :notes="notes"
+      :selected-id="selectedId"
+      @select="emit('select', $event)"
+    />
   </section>
 </template>
+
+<style scoped>
+.note-selector__status {
+  margin: 0;
+  padding: var(--space-base) var(--space-md);
+  font-size: var(--text-sm-size);
+  line-height: var(--text-sm-leading);
+  color: var(--color-ink-muted);
+}
+</style>
