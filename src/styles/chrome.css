@@ -173,3 +173,56 @@ html:not([data-chrome]) .popover-shell {
   padding: 0 var(--space-xxs);
   box-decoration-break: clone;
 }
+
+/* ------------------------------------------------------------------ */
+/* Skeleton loaders — reserve layout while content loads              */
+/* ------------------------------------------------------------------ */
+
+.skeleton {
+  display: block;
+  border-radius: var(--radius-sm);
+  background: var(--oats-fill-soft-opaque);
+  animation: skeleton-pulse var(--duration-deliberate) var(--ease-in-out) infinite;
+}
+
+.skeleton--avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+
+.skeleton--pill {
+  height: 12px;
+  border-radius: var(--radius-pill);
+}
+
+.skeleton--dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  flex-shrink: 0;
+}
+
+.skeleton--line {
+  height: 0.85em;
+  width: 100%;
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+

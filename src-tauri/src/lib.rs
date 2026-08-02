@@ -49,6 +49,9 @@ pub fn run() {
                         .radius(12.0)
                         .build(),
                 );
+                // alwaysOnTop only sets NSFloatingWindowLevel — bump to status
+                // level so the tray popover sits above other apps' windows.
+                configure_popover_layer(&popover);
             }
 
             let blur_target = popover.clone();
@@ -119,5 +122,44 @@ fn toggle_popover(window: &tauri::WebviewWindow) {
 
     let _ = window.move_window_constrained(Position::TrayBottomCenter);
     let _ = window.show();
+    #[cfg(target_os = "macos")]
+    order_popover_front(window);
+    #[cfg(not(target_os = "macos"))]
+    let _ = window.set_focus();
+}
+
+/// Raise the popover above floating / fullscreen app windows (menu-bar level).
+#[cfg(target_os = "macos")]
+fn configure_popover_layer(window: &tauri::WebviewWindow) {
+    use objc2_app_kit::{
+        NSStatusWindowLevel, NSWindow, NSWindowCollectionBehavior,
+    };
+
+    let Ok(ns_window_ptr) = window.ns_window() else {
+        return;
+    };
+    let ns_window = unsafe { &*(ns_window_ptr as *const NSWindow) };
+
+    ns_window.setLevel(NSStatusWindowLevel);
+    let behavior = ns_window.collectionBehavior()
+        | NSWindowCollectionBehavior::CanJoinAllSpaces
+        | NSWindowCollectionBehavior::FullScreenAuxiliary
+        | NSWindowCollectionBehavior::Stationary;
+    ns_window.setCollectionBehavior(behavior);
+}
+
+#[cfg(target_os = "macos")]
+fn order_popover_front(window: &tauri::WebviewWindow) {
+    use objc2_app_kit::NSWindow;
+
+    // Re-assert level in case show/focus reset it to floating.
+    configure_popover_layer(window);
+
+    let Ok(ns_window_ptr) = window.ns_window() else {
+        let _ = window.set_focus();
+        return;
+    };
+    let ns_window = unsafe { &*(ns_window_ptr as *const NSWindow) };
+    ns_window.orderFrontRegardless();
     let _ = window.set_focus();
 }

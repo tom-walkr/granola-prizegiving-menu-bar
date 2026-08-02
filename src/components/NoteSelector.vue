@@ -4,6 +4,7 @@ import { describeGranolaLoadError, listAllNotes } from '../api/granola';
 import type { NoteListItem } from '../api/types';
 import granolaLogo from '../assets/granola-pg-logo.svg';
 import MeetingList from './MeetingList.vue';
+import MeetingListSkeleton from './MeetingListSkeleton.vue';
 
 const DEFAULT_POLL_INTERVAL_MS = 5 * 60 * 1000;
 // Ignore refresh() calls (e.g. from rapid popover open/close) this soon after the last fetch.
@@ -28,7 +29,8 @@ const error = ref<string | null>(null);
 let pollHandle: ReturnType<typeof setInterval> | undefined;
 let lastFetchAt = 0;
 
-const showList = computed(() => !isLoading.value && !error.value && notes.value.length > 0);
+const showSkeleton = computed(() => isLoading.value && notes.value.length === 0 && !error.value);
+const showList = computed(() => notes.value.length > 0);
 
 async function loadNotes(): Promise<void> {
   if (props.forcedStatus === 'loading') {
@@ -47,6 +49,7 @@ async function loadNotes(): Promise<void> {
   }
 
   isLoading.value = true;
+  // Keep any existing list visible while refreshing — only clear error on a new attempt.
   error.value = null;
   try {
     notes.value = await listAllNotes();
@@ -77,22 +80,9 @@ defineExpose({ refresh });
 
 <template>
   <section class="note-selector" aria-label="Recent notes">
-    <div
-      v-if="isLoading && notes.length === 0"
-      class="note-selector__message"
-      aria-live="polite"
-    >
-      <img
-        class="note-selector__message-mark"
-        :src="granolaLogo"
-        alt=""
-        width="36"
-        height="36"
-      />
-      <p class="note-selector__message-title">Loading notes…</p>
-    </div>
+    <MeetingListSkeleton v-if="showSkeleton" />
 
-    <div v-else-if="error" class="note-selector__message" role="alert">
+    <div v-else-if="error && notes.length === 0" class="note-selector__message" role="alert">
       <img
         class="note-selector__message-mark"
         :src="granolaLogo"
@@ -105,6 +95,7 @@ defineExpose({ refresh });
     </div>
 
     <p v-else-if="notes.length === 0" class="note-selector__status">No notes found.</p>
+
     <MeetingList
       v-else-if="showList"
       :notes="notes"

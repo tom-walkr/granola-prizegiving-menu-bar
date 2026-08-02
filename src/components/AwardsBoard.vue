@@ -7,6 +7,7 @@ import { computeSpeakerStats } from '../logic/speakerStats';
 import type { SpeakerStats } from '../logic/speakerStats';
 import { wordShareFromStats } from '../logic/wordShare';
 import AwardCard from './AwardCard.vue';
+import AwardsBoardSkeleton from './AwardsBoardSkeleton.vue';
 import TwoWayComparison from './TwoWayComparison.vue';
 import WordShareChart from './WordShareChart.vue';
 
@@ -22,38 +23,69 @@ const status = ref<Status>('loading');
 const errorMessage = ref('');
 const result = ref<AwardsResult | null>(null);
 const stats = ref<SpeakerStats | null>(null);
+const loadedNoteId = ref<string | null>(null);
 
 const wordShare = computed(() => (stats.value ? wordShareFromStats(stats.value) : []));
+
+/** First load / note switch with nothing to show yet — reserve layout with skeletons. */
+const showSkeleton = computed(
+  () => status.value === 'loading' && !(result.value && loadedNoteId.value === props.noteId)
+);
+
+/** Keep prior awards visible only while the same note is refreshing. */
+const showContent = computed(
+  () =>
+    (status.value === 'ready' || status.value === 'loading') &&
+    result.value !== null &&
+    loadedNoteId.value === props.noteId
+);
 
 async function load(noteId: string): Promise<void> {
   status.value = 'loading';
   errorMessage.value = '';
-  result.value = null;
-  stats.value = null;
+
+  // Drop stale awards when switching notes so we don't flash the wrong meeting.
+  if (loadedNoteId.value !== noteId) {
+    result.value = null;
+    stats.value = null;
+  }
 
   if (props.forcedStatus === 'loading') return;
   if (props.forcedStatus === 'error') {
     errorMessage.value = 'Something went wrong loading this note.';
     status.value = 'error';
+    result.value = null;
+    stats.value = null;
+    loadedNoteId.value = null;
     return;
   }
 
   try {
     const note = await getNote(noteId, { includeTranscript: true });
     if (!note) {
+      result.value = null;
+      stats.value = null;
+      loadedNoteId.value = null;
       status.value = 'not-ready';
       return;
     }
     if (!note.transcript || note.transcript.length === 0) {
+      result.value = null;
+      stats.value = null;
+      loadedNoteId.value = null;
       status.value = 'empty';
       return;
     }
     const nextStats = computeSpeakerStats(note.transcript, note.attendees);
     stats.value = nextStats;
     result.value = computeAwards(nextStats);
+    loadedNoteId.value = noteId;
     status.value = 'ready';
   } catch (err) {
     errorMessage.value = describeGranolaLoadError(err);
+    result.value = null;
+    stats.value = null;
+    loadedNoteId.value = null;
     status.value = 'error';
   }
 }
@@ -66,19 +98,33 @@ watch(
 </script>
 
 <template>
-  <section class="awards-board" aria-label="Awards">
-    <p v-if="status === 'loading'" class="awards-board__status">Loading awards…</p>
-    <p v-else-if="status === 'not-ready'" class="awards-board__status">
-      This note isn't ready yet — it may still be processing.
-    </p>
-    <p v-else-if="status === 'empty'" class="awards-board__status">
-      No transcript is available for this note.
-    </p>
-    <p v-else-if="status === 'error'" class="awards-board__status" role="alert">
-      {{ errorMessage }}
-    </p>
+  <section class="awards-board" aria-label="Awards" :aria-busy="status === 'loading' || undefined">
+    <AwardsBoardSkeleton v-if="showSkeleton" />
 
-    <template v-else-if="status === 'ready' && result">
+    <div
+      v-else-if="status === 'not-ready'"
+      class="awards-board__message"
+      role="status"
+    >
+      <p class="awards-board__message-title">Not ready yet</p>
+      <p class="awards-board__message-hint">
+        This note may still be processing.
+      </p>
+    </div>
+
+    <div v-else-if="status === 'empty'" class="awards-board__message" role="status">
+      <p class="awards-board__message-title">No transcript</p>
+      <p class="awards-board__message-hint">
+        Nothing to score for this note yet.
+      </p>
+    </div>
+
+    <div v-else-if="status === 'error'" class="awards-board__message" role="alert">
+      <p class="awards-board__message-title">Couldn't load awards</p>
+      <p class="awards-board__message-hint">{{ errorMessage }}</p>
+    </div>
+
+    <template v-else-if="showContent && result">
       <WordShareChart :entries="wordShare" />
 
       <div v-if="result.mode === 'full'" class="awards-board__grid">
@@ -114,12 +160,33 @@ watch(
   min-width: 0;
 }
 
-.awards-board__status {
+.awards-board__message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  min-height: 120px;
+  padding: var(--space-xl) var(--space-lg);
+  text-align: center;
+}
+
+.awards-board__message-title {
   margin: 0;
-  padding: var(--space-base) var(--space-md);
+  font-family: var(--font-display);
+  font-size: var(--text-award-title-size);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--text-award-title-leading);
+  letter-spacing: var(--text-award-title-tracking);
+  color: var(--color-ink);
+}
+
+.awards-board__message-hint {
+  margin: 0;
+  max-width: 22em;
   font-size: var(--text-sm-size);
   line-height: var(--text-sm-leading);
-  color: var(--color-ink-muted);
+  color: var(--color-ink-quiet);
 }
 
 .awards-board__grid {

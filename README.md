@@ -21,17 +21,29 @@ Idea is to parse the transcript and hand out (heavily tongue-in-cheek) awards to
 - **Buzzword detector**
 - etc...
 
+## Prerequisites
+
+macOS only. You'll need:
+
+- **macOS 11+**
+- **Xcode Command Line Tools** — `xcode-select --install`
+- **Node.js 20+** (LTS is fine; npm comes with it)
+- **Rust** via [rustup](https://rustup.rs) — stable, **1.77.2+** (`rustc --version` to check)
+
+You'll also want a [Granola API key](https://docs.granola.ai) from your workspace settings if you're hitting the real API. Otherwise set `VITE_USE_MOCK_DATA=true` and run against the fixtures.
+
+First-time Rust compile of the Tauri shell is slow; subsequent runs are much quicker.
 
 ## Setup
 
 ```
 npm install
 cp .env.example .env   # add a real Granola API key, or set VITE_USE_MOCK_DATA=true
-npm run dev            # Tauri dev mode
+npm run dev            # tray icon + popover
 ```
 
 Other commands: `npm run check` (lint + typecheck), `npm run test`
-(Vitest), `npm run storybook`, `npm run build` (macOS app bundle).
+(Vitest), `npm run storybook`, `npm run build` (macOS `.app` / DMG).
 
 ## Status
 
