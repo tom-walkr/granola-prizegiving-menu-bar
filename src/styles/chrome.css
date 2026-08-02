@@ -78,6 +78,19 @@ html:not([data-chrome]) .popover-shell {
   background: var(--chrome-tint);
 }
 
+.popover-shell__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.popover-shell__logo {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+}
+
 .popover-shell__header h1 {
   margin: 0;
   font-family: var(--font-display);
