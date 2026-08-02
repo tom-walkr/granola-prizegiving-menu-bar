@@ -8,6 +8,16 @@
   <em>A macOS menu bar app that turns meeting transcripts into tongue-in-cheek talk-time awards.</em>
 </p>
 
+<p align="center">
+  <img src="docs/leaderboard.png" alt="Talk-time leaderboard" width="420" />
+  &nbsp;&nbsp;
+  <img src="docs/awards.png" alt="Prizegiving awards for a meeting" width="420" />
+</p>
+
+<p align="center">
+  <sub>Talk-time leaderboard · Awards</sub>
+</p>
+
 ---
 
 Recently became aware of the Granola API, which allows users to fetch notes and diarised transcripts. Simultaneously found myself monologuing super hard in a meeting at work. Been wanting to try my hand at building a MacOS menu bar item for a while and thought this would be a good opportunity. Have got Claude to scaffold out a simple project for me to add to.

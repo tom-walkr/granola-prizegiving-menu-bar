@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { getNote, describeGranolaLoadError } from '../api/granola';
 import clipboardIcon from '../assets/clipboard.svg?raw';
-import granolaLogo from '../assets/granola-pg-logo.svg?raw';
+import granolaLogo from '../assets/granola-logo.svg?raw';
 import slackIcon from '../assets/slack.svg?raw';
 import { computeAwards } from '../logic/awards';
 import type { AwardsResult } from '../logic/awards';
@@ -310,8 +310,8 @@ onUnmounted(() => {
           v-if="noteWebUrl"
           type="button"
           class="awards-board__copy"
-          aria-label="Open Granola"
-          title="Open Granola"
+          aria-label="Open in Granola"
+          title="Open in Granola"
           @click="openInGranola"
         >
           <span
@@ -319,7 +319,7 @@ onUnmounted(() => {
             aria-hidden="true"
             v-html="granolaLogo"
           />
-          <span class="awards-board__copy-label">Open Granola</span>
+          <span class="awards-board__copy-label">Open in Granola</span>
         </button>
       </div>
     </template>

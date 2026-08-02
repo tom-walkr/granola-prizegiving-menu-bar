@@ -90,12 +90,15 @@ async function onOpenSettings(): Promise<void> {
     <template v-if="ready">
       <NoteSelector
         ref="noteSelector"
+        class="popover-shell__notes"
+        :class="{ 'popover-shell__notes--fill': !selectedNoteId || browsingMeetings }"
         :selected-id="selectedNoteId"
         @select="selectedNoteId = $event"
         @browsing="browsingMeetings = $event"
       />
       <AwardsBoard
         v-if="selectedNoteId && !browsingMeetings"
+        class="popover-shell__awards"
         :note-id="selectedNoteId"
       />
     </template>
