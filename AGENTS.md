@@ -83,10 +83,11 @@ prizegiving — that would overstate what a two-way split actually supports.
 - Note list polling defaults to every 5 minutes (`NoteSelector.vue`'s
   `pollIntervalMs` prop) plus a debounced refresh on popover focus (wired in
   `App.vue` via `onFocusChanged`), not a refetch on every open.
-- "Launch at login" (`src-tauri/src/launch_at_login.rs`) is a stub: it holds
-  an in-memory bool and doesn't touch a real login-item API yet
-  (`SMAppService` on macOS 13+, or the legacy `SMLoginItemSetEnabled`). Wire
-  the real thing here when it's time, the frontend toggle already exists.
+- "Launch at Login" lives in the native tray menu (right-click the tray icon)
+  as a `CheckMenuItem` in `src-tauri/src/lib.rs`. The backing stub
+  (`src-tauri/src/launch_at_login.rs`) holds an in-memory bool and doesn't
+  touch a real login-item API yet (`SMAppService` on macOS 13+, or the
+  legacy `SMLoginItemSetEnabled`). Wire the real thing here when it's time.
 
 ## Design tokens (`src/styles/`)
 

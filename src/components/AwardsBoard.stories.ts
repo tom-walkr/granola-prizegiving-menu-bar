@@ -3,7 +3,12 @@ import AwardsBoard from './AwardsBoard.vue';
 
 const meta: Meta<typeof AwardsBoard> = {
   component: AwardsBoard,
-  title: 'Components/AwardsBoard',
+  title: 'Design System/AwardsBoard',
+  decorators: [
+    () => ({
+      template: '<div style="max-width: 360px; padding: 12px;"><story /></div>',
+    }),
+  ],
 };
 
 export default meta;

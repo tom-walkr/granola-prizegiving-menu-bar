@@ -2,7 +2,7 @@ mod launch_at_login;
 
 use tauri::{
     image::Image,
-    menu::{Menu, PredefinedMenuItem},
+    menu::{CheckMenuItem, Menu, PredefinedMenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     window::{Effect, EffectState, EffectsBuilder},
     Manager, WindowEvent,
@@ -10,6 +10,7 @@ use tauri::{
 use tauri_plugin_positioner::{on_tray_event, Position, WindowExt};
 
 const POPOVER_LABEL: &str = "popover";
+const LAUNCH_AT_LOGIN_ID: &str = "launch-at-login";
 
 // Prizegiving logo (from src/assets/granola-pg-logo.svg) as a template image:
 // macOS ignores RGB and tints the alpha mask for light/dark menu bars.
@@ -20,10 +21,6 @@ const TRAY_ICON_BYTES: &[u8] = include_bytes!("../icons/tray/tray-icon-dark@2x.p
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_positioner::init())
-        .invoke_handler(tauri::generate_handler![
-            launch_at_login::get_launch_at_login,
-            launch_at_login::set_launch_at_login,
-        ])
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -61,15 +58,32 @@ pub fn run() {
             });
 
             let tray_icon = Image::from_bytes(TRAY_ICON_BYTES)?;
+            let launch_at_login = CheckMenuItem::with_id(
+                app,
+                LAUNCH_AT_LOGIN_ID,
+                "Launch at Login",
+                true,
+                launch_at_login::get_launch_at_login(),
+                None::<&str>,
+            )?;
+            let separator = PredefinedMenuItem::separator(app)?;
             let quit = PredefinedMenuItem::quit(app, None)?;
-            let tray_menu = Menu::with_items(app, &[&quit])?;
+            let tray_menu = Menu::with_items(app, &[&launch_at_login, &separator, &quit])?;
 
             TrayIconBuilder::new()
                 .icon(tray_icon)
                 .icon_as_template(true)
                 .menu(&tray_menu)
-                // Left click toggles the awards popover; right click shows Quit.
+                // Left click toggles the awards popover; right click shows the tray menu.
                 .show_menu_on_left_click(false)
+                .on_menu_event(move |_app, event| {
+                    if event.id() != LAUNCH_AT_LOGIN_ID {
+                        return;
+                    }
+                    // CheckMenuItem toggles itself before this fires — sync the stub.
+                    let enabled = launch_at_login.is_checked().unwrap_or(false);
+                    launch_at_login::set_launch_at_login(enabled);
+                })
                 .on_tray_icon_event(|tray, event| {
                     on_tray_event(tray.app_handle(), &event);
 
