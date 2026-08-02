@@ -14,7 +14,7 @@ describe('computeAwards', () => {
 
     const winnerById = Object.fromEntries(result.awards.map((award) => [award.id, award.winnerName]));
     expect(winnerById['longest-monologue']).toBe('Bob Jones');
-    expect(winnerById['quietest-mouse']).toBe('Alice Smith');
+    expect(winnerById['quietest-everywhere']).toBe('Alice Smith');
     expect(winnerById['chatterbox']).toBe('Carol Diaz');
     expect(winnerById['fastest-talker']).toBe('Carol Diaz');
     expect(winnerById['most-interruptions']).toBe('Alice Smith');

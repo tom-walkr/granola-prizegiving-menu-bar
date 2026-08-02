@@ -20,11 +20,12 @@ function utterance(
 }
 
 // iOS note: diarization_label present, so speakerStats produces a full
-// 3-person breakdown. Timings are engineered so each award category has an
+// 6-person breakdown. Timings are engineered so each award category has an
 // unambiguous, non-tied winner: Bob's single long turn wins Longest
 // Monologue, Carol talks the most and the fastest, and Alice — despite
 // having the least total floor time — interjects enough to win Most
-// Interruptions too.
+// Interruptions too. Dana, Eve, and Frank fill out the big-call cast
+// without stealing any of those awards.
 const iosStandupTranscript: TranscriptUtterance[] = [
   utterance('alice', 'microphone', 0, 5, "Morning everyone, thanks so much for joining today's call."),
   utterance('bob', 'speaker', 5, 10, 'Morning, happy to be here and ready to dig in.'),
@@ -64,6 +65,32 @@ const iosStandupTranscript: TranscriptUtterance[] = [
   ),
   utterance('bob', 'speaker', 410, 413, 'Great, thanks Carol.'),
   utterance('alice', 'microphone', 413, 414, 'Thanks.'),
+  utterance(
+    'dana',
+    'speaker',
+    414,
+    454,
+    "Quick update from design on the onboarding polish Bob mentioned. We mocked three error-state variants last week and ran them past five new signups in research, and the clearer copy on the expired verification code screen was the one people recovered from fastest. I'll land that in the next release candidate, and then we can look at the empty-state illustrations once the reporting nudge work has a clearer home."
+  ),
+  utterance('eve', 'speaker', 454, 457, 'That tracks with what support has been seeing.'),
+  utterance(
+    'eve',
+    'speaker',
+    457,
+    497,
+    "From the support side, those same setup steps Carol flagged are still the top three ticket themes this month. We started a short internal checklist for new accounts that walks people through connecting a data source before they hit the dashboard, and the early read is fewer repeat contacts in the first two weeks. Happy to share the draft with whoever ends up owning that first-ninety-days initiative so it doesn't live only in the help desk."
+  ),
+  utterance('frank', 'speaker', 497, 500, 'Makes sense, and I can take the hiring angle.'),
+  utterance(
+    'frank',
+    'speaker',
+    500,
+    545,
+    "On Bob's point about another platform engineer, I already opened the req with recruiting and we're screening for someone who's comfortable with on-call and event-driven systems. Two strong candidates are in process this week. Separately, if we're combining churn and expansion under one owner, I'd like product and CS to agree on that person before we start the next planning cycle, otherwise the roadmap will keep splitting those bets apart again."
+  ),
+  utterance('bob', 'speaker', 545, 548, 'Agreed, thanks everyone.'),
+  utterance('dana', 'speaker', 548, 551, "I'll send the design notes after."),
+  utterance('alice', 'microphone', 551, 554, "Perfect, that's a wrap."),
 ];
 
 const macosOneOnOneTranscript: TranscriptUtterance[] = [
@@ -100,11 +127,18 @@ export const mockIosStandupNote: Note = {
   id: 'note-ios-standup',
   title: 'Weekly Standup',
   created_at: '2026-07-21T09:00:00.000Z',
-  updated_at: '2026-07-21T09:07:00.000Z',
-  attendees: [{ name: 'Alice Smith' }, { name: 'Bob Jones' }, { name: 'Carol Diaz' }],
+  updated_at: '2026-07-21T09:10:00.000Z',
+  attendees: [
+    { name: 'Alice Smith' },
+    { name: 'Bob Jones' },
+    { name: 'Carol Diaz' },
+    { name: 'Dana Okonkwo' },
+    { name: 'Eve Chen' },
+    { name: 'Frank Müller' },
+  ],
   summary: {
     markdown:
-      '## Weekly Standup\n\nRoadmap update from Bob, churn and expansion review from Carol.',
+      '## Weekly Standup\n\nRoadmap from Bob, churn/expansion from Carol, plus design, support, and hiring updates from Dana, Eve, and Frank.',
   },
   transcript: iosStandupTranscript,
   web_url: 'https://notes.granola.ai/d/note-ios-standup',

@@ -78,8 +78,9 @@ const props = defineProps<{
 
 .two-way__name {
   overflow: hidden;
+  font-family: var(--font-display);
   font-size: var(--text-sm-size);
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-normal);
   line-height: var(--text-sm-leading);
   color: var(--color-ink-muted);
   text-overflow: ellipsis;

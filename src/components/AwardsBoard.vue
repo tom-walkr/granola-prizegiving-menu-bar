@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { getNote, describeGranolaLoadError } from '../api/granola';
 import clipboardIcon from '../assets/clipboard.svg?raw';
-import externalLinkIcon from '../assets/external-link.svg?raw';
+import granolaLogo from '../assets/granola-pg-logo.svg?raw';
 import slackIcon from '../assets/slack.svg?raw';
 import { computeAwards } from '../logic/awards';
 import type { AwardsResult } from '../logic/awards';
@@ -317,7 +317,7 @@ onUnmounted(() => {
           <span
             class="awards-board__copy-icon"
             aria-hidden="true"
-            v-html="externalLinkIcon"
+            v-html="granolaLogo"
           />
           <span class="awards-board__copy-label">Open Granola</span>
         </button>

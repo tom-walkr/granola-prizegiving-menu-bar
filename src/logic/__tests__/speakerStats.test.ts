@@ -35,15 +35,22 @@ describe('computeSpeakerStats', () => {
     expect(stats.restOfCall.wordsPerMinute).toBe(0);
   });
 
-  it('produces a full per-speaker breakdown for an iOS note with 3 labeled speakers', () => {
+  it('produces a full per-speaker breakdown for an iOS note with 6 labeled speakers', () => {
     const stats = computeSpeakerStats(mockIosStandupNote.transcript ?? [], mockIosStandupNote.attendees);
 
     expect(stats.mode).toBe('full');
     if (stats.mode !== 'full') throw new Error('unreachable');
-    expect(stats.speakers).toHaveLength(3);
+    expect(stats.speakers).toHaveLength(6);
 
     const names = stats.speakers.map((speaker) => speaker.displayName).sort();
-    expect(names).toEqual(['Alice Smith', 'Bob Jones', 'Carol Diaz']);
+    expect(names).toEqual([
+      'Alice Smith',
+      'Bob Jones',
+      'Carol Diaz',
+      'Dana Okonkwo',
+      'Eve Chen',
+      'Frank Müller',
+    ]);
 
     const bob = stats.speakers.find((speaker) => speaker.displayName === 'Bob Jones');
     expect(bob?.longestUtterance?.durationSeconds).toBe(180);

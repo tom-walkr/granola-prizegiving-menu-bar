@@ -6,10 +6,10 @@ function isTauri(): boolean {
   return '__TAURI_INTERNALS__' in window;
 }
 
-/** Open a note in Granola (browser / desktop handoff via notes.granola.ai). */
+/** Open a note in Granola (desktop app when available, else browser). */
 export async function openGranolaNote(webUrl: string): Promise<void> {
   const url = webUrl.trim();
-  if (!url.starts_with(GRANOLA_NOTE_URL_PREFIX)) {
+  if (!url.startsWith(GRANOLA_NOTE_URL_PREFIX)) {
     throw new Error('Not a Granola note URL');
   }
 

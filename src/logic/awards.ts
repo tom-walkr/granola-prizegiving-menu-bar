@@ -3,7 +3,7 @@ import type { SpeakerProfile, SpeakerStats } from './speakerStats';
 
 export type AwardId =
   | 'longest-monologue'
-  | 'quietest-mouse'
+  | 'quietest-everywhere'
   | 'chatterbox'
   | 'fastest-talker'
   | 'most-interruptions';
@@ -79,8 +79,8 @@ export const AWARD_DEFINITIONS: AwardDefinition[] = [
       speaker.longestUtterance ? formatDuration(speaker.longestUtterance.durationSeconds) : '—',
   },
   {
-    id: 'quietest-mouse',
-    title: 'Quietest Mouse',
+    id: 'quietest-everywhere',
+    title: 'Quietest',
     requiresFullBreakdown: true,
     pickWinner: (speakers) => minBy(speakers, (speaker) => speaker.totalDurationSeconds),
     score: (speaker) => speaker.totalDurationSeconds,

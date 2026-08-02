@@ -26,8 +26,8 @@ export const LongestMonologue: Story = {
 
 export const Quietest: Story = {
   args: {
-    awardId: 'quietest-mouse',
-    title: 'Quietest Mouse',
+    awardId: 'quietest-everywhere',
+    title: 'Quietest',
     winnerName: 'Alice Smith',
     metric: '11s',
   },

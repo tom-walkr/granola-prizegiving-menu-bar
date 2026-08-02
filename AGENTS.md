@@ -6,7 +6,7 @@ Conventions for working on this repo. Read this before making changes.
 
 A macOS menu bar app that pulls a meeting's transcript from the Granola API
 and turns it into a set of talk-time "awards" (longest monologue, quietest
-mouse, etc). The functional layer is done first; styling is a deliberate
+everywhere, etc). The functional layer is done first; styling is a deliberate
 second pass.
 
 ## Stack

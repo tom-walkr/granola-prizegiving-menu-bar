@@ -88,9 +88,9 @@ const initials = computed(() => initialsFromTitle(props.winnerName));
 .award-card__winner {
   margin: 0;
   overflow: hidden;
-  font-family: var(--font-sans);
+  font-family: var(--font-display);
   font-size: var(--text-md-size);
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-normal);
   line-height: var(--text-md-leading);
   letter-spacing: var(--text-md-tracking);
   color: var(--color-ink);
@@ -112,7 +112,7 @@ const initials = computed(() => initialsFromTitle(props.winnerName));
   --award-accent-ink: var(--color-oats-gold-400);
 }
 
-.award-card[data-award='quietest-mouse'] {
+.award-card[data-award='quietest-everywhere'] {
   --award-accent: var(--color-dot-blue);
   --award-accent-ink: var(--color-oats-blue-400);
 }

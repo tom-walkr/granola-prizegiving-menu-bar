@@ -17,7 +17,7 @@ export interface SlackClipboardPayload {
 /** Unicode emoji per award — render natively when pasted into Slack. */
 const AWARD_EMOJI: Record<AwardId, string> = {
   'longest-monologue': '🗣️',
-  'quietest-mouse': '🐁',
+  'quietest-everywhere': '🤫',
   chatterbox: '📣',
   'fastest-talker': '⚡',
   'most-interruptions': '🖐️',
@@ -25,7 +25,7 @@ const AWARD_EMOJI: Record<AwardId, string> = {
 
 const AWARD_TAGLINES: Record<AwardId, (value: string) => string> = {
   'longest-monologue': (value) => `${value} of uninterrupted glory`,
-  'quietest-mouse': (value) => `just ${value} on the clock`,
+  'quietest-everywhere': (value) => `just ${value} on the clock`,
   chatterbox: (value) => `${value} of floor time`,
   'fastest-talker': (value) => `${value} — words flying`,
   'most-interruptions': (value) => `${value} overlaps (approx.)`,

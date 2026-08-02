@@ -11,7 +11,7 @@ describe('wordShareFromStats', () => {
     );
     const share = wordShareFromStats(stats);
 
-    expect(share.length).toBe(3);
+    expect(share.length).toBe(6);
     expect(share[0].words).toBeGreaterThanOrEqual(share[1].words);
     const totalWords = share.reduce((sum, entry) => sum + entry.words, 0);
     const totalSeconds = share.reduce((sum, entry) => sum + entry.seconds, 0);

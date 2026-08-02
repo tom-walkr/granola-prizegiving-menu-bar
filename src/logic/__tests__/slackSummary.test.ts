@@ -21,7 +21,7 @@ describe('formatAwardsPlain', () => {
     expect(text).toContain('And the winners are…');
     expect(text).toContain('🗣️ Longest Monologue');
     expect(text).toContain('Bob Jones');
-    expect(text).toContain('🐁 Quietest Mouse');
+    expect(text).toContain('🤫 Quietest');
     expect(text).toContain('Alice Smith');
     expect(text).toContain('📣 Chatterbox');
     expect(text).toContain('Carol Diaz');
@@ -53,7 +53,7 @@ describe('formatAwardsForSlack', () => {
     expect(html).toContain('<i>And the winners are…</i>');
     expect(html).toContain('🗣️ <b>Longest Monologue</b>');
     expect(html).toContain('<b>Bob Jones</b>');
-    expect(html).toContain('🐁 <b>Quietest Mouse</b>');
+    expect(html).toContain('🤫 <b>Quietest</b>');
     expect(html).toContain('<b>Alice Smith</b>');
     expect(html).toContain('📣 <b>Chatterbox</b>');
     expect(html).toContain('<b>Carol Diaz</b>');
