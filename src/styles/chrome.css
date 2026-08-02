@@ -15,7 +15,7 @@
   --chrome-radius: 12px;
   --chrome-padding: var(--space-md);
   --chrome-gap: var(--space-sm);
-  --chrome-tint: var(--oats-fill-accent-highlight);
+  --chrome-tint: var(--oats-fill-accent-highlight); /* brand green wash */
   --chrome-row-hover: var(--oats-fill-soft);
   --chrome-divider: var(--color-border);
 }

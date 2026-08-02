@@ -47,13 +47,13 @@
   --color-oats-off-white-a15: #ffffff26;
   --color-oats-off-white-a20: #fff3;
 
-  /* Olive brand ladder */
+  /* Olive brand ladder — brand green is 300: rgb(178, 194, 72) */
   --color-oats-green-50: #f2f6e1;
   --color-oats-green-100: #e5eacd;
   --color-oats-green-200: #d1e043;
-  --color-oats-green-300: #b2c248;
+  --color-oats-green-300: #b2c248; /* brand / Olive Press */
   --color-oats-green-400: #788c15;
-  --color-oats-green-500: #5b6f00;
+  --color-oats-green-500: #5b6f00; /* dark CTA / ink on light */
   --color-oats-green-600: #434625;
 
   /* Yellow highlighter */
@@ -124,10 +124,10 @@
 
   --oats-fill-primary: var(--color-oats-neutral-800);
   --oats-fill-primary-hover: var(--color-oats-neutral-700);
-  --oats-fill-accent: var(--color-oats-green-500);
-  --oats-fill-accent-hover: #4c5616;
-  --oats-fill-accent-highlight: #788c1526;
-  --oats-fill-accent-highlight-strong: #5b6f0033;
+  --oats-fill-accent: var(--color-oats-green-300);
+  --oats-fill-accent-hover: var(--color-oats-green-400);
+  --oats-fill-accent-highlight: #b2c24833;
+  --oats-fill-accent-highlight-strong: #b2c24855;
   --oats-fill-danger: var(--color-oats-red-300);
   --oats-fill-danger-hover: var(--color-oats-red-400);
   --oats-fill-disabled: var(--color-oats-neutral-300);
@@ -168,6 +168,7 @@
   --color-ink-accent-strong: var(--oats-ink-accent-strong);
   --color-ink-danger: var(--oats-ink-danger);
 
+  --color-brand: var(--color-oats-green-300); /* rgb(178, 194, 72) */
   --color-fill-primary: var(--oats-fill-primary);
   --color-fill-accent: var(--oats-fill-accent);
   --color-fill-accent-hover: var(--oats-fill-accent-hover);
@@ -369,7 +370,7 @@ html.dark {
 
   --oats-fill-primary: var(--color-oats-neutral-200);
   --oats-fill-primary-hover: var(--color-oats-neutral-400);
-  --oats-fill-accent: var(--color-oats-green-500);
+  --oats-fill-accent: var(--color-oats-green-300);
   --oats-fill-accent-hover: var(--color-oats-green-400);
   --oats-fill-danger: var(--color-oats-red-400);
   --oats-fill-danger-hover: var(--color-oats-red-300);
@@ -383,8 +384,8 @@ html.dark {
   --oats-fill-soft-hover: var(--color-oats-off-white-a15);
   --oats-fill-soft-opaque: var(--color-oats-neutral-750);
   --oats-fill-soft-opaque-hover: var(--color-oats-neutral-600);
-  --oats-fill-accent-highlight: #788c1533;
-  --oats-fill-accent-highlight-strong: #b2c24833;
+  --oats-fill-accent-highlight: #b2c24833;
+  --oats-fill-accent-highlight-strong: #b2c24855;
   --oats-fill-input: var(--color-oats-neutral-750);
   --oats-fill-input-disabled: var(--color-oats-neutral-750);
 
