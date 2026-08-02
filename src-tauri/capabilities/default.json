@@ -6,6 +6,8 @@
     "popover"
   ],
   "permissions": [
-    "core:default"
+    "core:default",
+    "core:window:allow-set-effects",
+    "core:window:allow-theme"
   ]
 }

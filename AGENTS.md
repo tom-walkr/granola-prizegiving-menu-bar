@@ -92,15 +92,22 @@ prizegiving — that would overstate what a two-way split actually supports.
 
 Granola-aligned tokens live in `src/styles/tokens.css` (the public
 `oats` palette + semantic roles scraped from granola.ai), with minimal
-document defaults in `base.css`. Prefer semantic aliases
+document defaults in `base.css` and menu-bar chrome utilities in
+`chrome.css`. Prefer semantic aliases
 (`--color-canvas`, `--color-ink`, `--color-fill-accent`, `--font-display`)
 over raw `--color-oats-*` in components.
 
-Components still render mostly unstyled markup beyond those document
+The tray popover uses native macOS `Menu` vibrancy under a transparent
+webview (`data-chrome="vibrancy"`). Storybook / plain Vite stay on
+opaque parchment (`data-chrome="flat"`). Override brand feel via chrome
+variables (`--chrome-tint`, `--chrome-row-hover`) and oats tokens — don't
+paint an opaque full-window canvas in Tauri mode.
+
+Components still render mostly unstyled markup beyond chrome + document
 defaults — the visual pass should consume the tokens, not invent new
 hexes. Don't redistribute Melange/Quadrant; UI uses the system stack
-(Granola's own macOS app uses SF Pro), display uses a Quadrant-like
-serif fallback stack.
+(Granola's own macOS app uses SF Pro), display headings use Clarendon
+Text Pro via Adobe Fonts (Typekit kit `jyo7jul`, linked from `index.html`).
 
 ## Storybook
 

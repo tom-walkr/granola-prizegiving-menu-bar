@@ -1,14 +1,14 @@
 <script setup lang="ts">
-// Layout only: header + content slots for the tray popover window.
-// No visual treatment yet — that's the design pass.
+// Chrome root for the tray popover: native Menu vibrancy underneath,
+// Granola token overrides (tint, ink) on the header / content slots.
 </script>
 
 <template>
-  <div>
-    <header>
+  <div class="popover-shell">
+    <header class="popover-shell__header">
       <slot name="header" />
     </header>
-    <main>
+    <main class="popover-shell__content">
       <slot />
     </main>
   </div>

@@ -22,6 +22,9 @@ onMounted(async () => {
   // Not running inside Tauri (e.g. Storybook, plain `vite` preview) — skip window wiring.
   if (!('__TAURI_INTERNALS__' in window)) return;
 
+  // Transparent canvas so the native Menu vibrancy applied in Rust shows through.
+  document.documentElement.dataset.chrome = 'vibrancy';
+
   await getCurrentWindow().onFocusChanged(({ payload: isFocused }) => {
     if (isFocused) noteSelector.value?.refresh();
   });

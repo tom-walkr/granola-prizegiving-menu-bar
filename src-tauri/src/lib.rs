@@ -2,7 +2,9 @@ mod launch_at_login;
 
 use tauri::{
     image::Image,
+    menu::{Menu, PredefinedMenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    window::{Effect, EffectState, EffectsBuilder},
     Manager, WindowEvent,
 };
 use tauri_plugin_positioner::{on_tray_event, Position, WindowExt};
@@ -39,6 +41,19 @@ pub fn run() {
                 .get_webview_window(POPOVER_LABEL)
                 .expect("popover window must be declared in tauri.conf.json");
 
+            #[cfg(target_os = "macos")]
+            {
+                // Menu material + active state matches a menu-bar dropdown.
+                // Requires transparent: true and app.macOSPrivateApi.
+                let _ = popover.set_effects(
+                    EffectsBuilder::new()
+                        .effect(Effect::Menu)
+                        .state(EffectState::Active)
+                        .radius(12.0)
+                        .build(),
+                );
+            }
+
             let blur_target = popover.clone();
             popover.on_window_event(move |event| {
                 if let WindowEvent::Focused(false) = event {
@@ -47,10 +62,15 @@ pub fn run() {
             });
 
             let tray_icon = Image::from_bytes(TRAY_ICON_BYTES)?;
+            let quit = PredefinedMenuItem::quit(app, None)?;
+            let tray_menu = Menu::with_items(app, &[&quit])?;
 
             TrayIconBuilder::new()
                 .icon(tray_icon)
                 .icon_as_template(true)
+                .menu(&tray_menu)
+                // Left click toggles the awards popover; right click shows Quit.
+                .show_menu_on_left_click(false)
                 .on_tray_icon_event(|tray, event| {
                     on_tray_event(tray.app_handle(), &event);
 

@@ -1,0 +1,162 @@
+/**
+ * Native menu-bar chrome utilities.
+ *
+ * Layering:
+ *   1. macOS Menu vibrancy (Rust set_effects) — frosted glass
+ *   2. This file — panel shape, sections, rows
+ *   3. oats tokens — ink / olive / highlighter overrides on content
+ *
+ * Toggle via documentElement.dataset.chrome:
+ *   "vibrancy" — Tauri tray popover (transparent canvas)
+ *   "flat"     — Storybook / plain Vite (opaque parchment)
+ */
+
+:root {
+  --chrome-radius: 12px;
+  --chrome-padding: var(--space-md);
+  --chrome-gap: var(--space-sm);
+  --chrome-tint: var(--oats-fill-accent-highlight);
+  --chrome-row-hover: var(--oats-fill-soft);
+  --chrome-divider: var(--color-border);
+}
+
+/* ------------------------------------------------------------------ */
+/* Vibrancy mode — let NSVisualEffectView show through                */
+/* ------------------------------------------------------------------ */
+
+html[data-chrome='vibrancy'] {
+  --color-canvas: transparent;
+  background: transparent;
+}
+
+html[data-chrome='vibrancy'],
+html[data-chrome='vibrancy'] body,
+html[data-chrome='vibrancy'] #app {
+  background: transparent;
+}
+
+/* ------------------------------------------------------------------ */
+/* Flat mode — Storybook / vite without a native material             */
+/* ------------------------------------------------------------------ */
+
+html[data-chrome='flat'],
+html:not([data-chrome]) {
+  --color-canvas: var(--oats-surface);
+}
+
+html[data-chrome='flat'] .popover-shell,
+html:not([data-chrome]) .popover-shell {
+  background: var(--oats-surface-raised);
+  box-shadow: var(--shadow-popover);
+}
+
+/* ------------------------------------------------------------------ */
+/* Shell                                                              */
+/* ------------------------------------------------------------------ */
+
+.popover-shell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--chrome-gap);
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 100%;
+  padding: var(--chrome-padding);
+  border-radius: var(--chrome-radius);
+  overflow: hidden;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+.popover-shell__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-base);
+  margin: calc(-1 * var(--space-xs)) calc(-1 * var(--space-xs)) 0;
+  border-radius: var(--radius-md);
+  background: var(--chrome-tint);
+}
+
+.popover-shell__header h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-award-title-size);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--text-award-title-leading);
+  letter-spacing: var(--text-award-title-tracking);
+  color: var(--color-ink);
+}
+
+.popover-shell__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--chrome-gap);
+  min-height: 0;
+  flex: 1;
+}
+
+/* ------------------------------------------------------------------ */
+/* Menu primitives — opt-in classes for the design pass               */
+/* ------------------------------------------------------------------ */
+
+.menu-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.menu-divider {
+  height: 1px;
+  margin: var(--space-xs) 0;
+  background: var(--chrome-divider);
+  border: 0;
+}
+
+.menu-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-height: var(--control-height);
+  padding: var(--space-xs) var(--space-base);
+  margin: 0 calc(-1 * var(--space-xs));
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: default;
+}
+
+.menu-row:hover,
+.menu-row:focus-visible {
+  background: var(--chrome-row-hover);
+}
+
+.menu-row[aria-selected='true'],
+.menu-row.is-selected {
+  background: var(--oats-fill-accent-highlight-strong);
+  color: var(--color-ink-accent-strong);
+}
+
+.menu-label {
+  flex: 1;
+  font-size: var(--text-md-size);
+  line-height: var(--text-md-leading);
+  letter-spacing: var(--text-md-tracking);
+  color: var(--color-ink);
+}
+
+.menu-secondary {
+  font-size: var(--text-sm-size);
+  line-height: var(--text-sm-leading);
+  letter-spacing: var(--text-sm-tracking);
+  color: var(--color-ink-muted);
+}
+
+.menu-highlight {
+  background: var(--color-fill-highlight);
+  border-radius: var(--radius-xs);
+  padding: 0 var(--space-xxs);
+  box-decoration-break: clone;
+}

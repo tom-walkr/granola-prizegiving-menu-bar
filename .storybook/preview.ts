@@ -1,6 +1,12 @@
 import type { Preview } from '@storybook/vue3-vite'
 import '../src/styles/tokens.css'
 import '../src/styles/base.css'
+import '../src/styles/chrome.css'
+
+// Storybook has no NSVisualEffectView — keep the opaque parchment canvas.
+if (typeof document !== 'undefined') {
+  document.documentElement.dataset.chrome = 'flat'
+}
 
 const preview: Preview = {
   parameters: {

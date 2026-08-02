@@ -10,6 +10,7 @@
     "beforeBuildCommand": "npm run build:frontend"
   },
   "app": {
+    "macOSPrivateApi": true,
     "windows": [
       {
         "label": "popover",
@@ -20,6 +21,7 @@
         "resizable": false,
         "fullscreen": false,
         "decorations": false,
+        "transparent": true,
         "alwaysOnTop": true,
         "skipTaskbar": true,
         "visible": false,

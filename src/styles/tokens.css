@@ -12,8 +12,8 @@
  * Typefaces on granola.ai are KMR Melange Grotesk (UI) + Quadrant Notepad
  * (display). Those are licensed brand fonts and are not bundled here.
  * The macOS Granola app itself moved to SF Pro for native chrome — so this
- * menu-bar app follows that product choice for UI, and uses a serif display
- * stack that approximates Quadrant when the brand face isn't installed.
+ * menu-bar app follows that product choice for UI. Display headings use
+ * Clarendon Text Pro via Adobe Fonts (Typekit kit jyo7jul).
  */
 
 :root {
@@ -206,14 +206,11 @@
 
   /*
    * UI: SF Pro / system — matches Granola's macOS app (Inter → SF Pro, Jan 2026).
-   * Display: Quadrant if installed, else macOS editorial serifs, else Georgia.
-   * Open-source substitutes if you later self-host fonts:
-   *   display → Fraunces; UI → Instrument Sans or Geist.
+   * Display: Clarendon Text Pro (Adobe Fonts / Typekit), then slab/serif fallbacks.
    */
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
     system-ui, Roboto, Helvetica, Arial, sans-serif;
-  --font-display: "Quadrant Notepad", Quadrant, "New York", "Iowan Old Style",
-    "Apple Garamond", Georgia, "Times New Roman", Times, serif;
+  --font-display: "clarendon-text-pro", serif;
   --font-mono: "SF Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
 
@@ -224,7 +221,7 @@
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
 
-  /* Marketing display scale (Quadrant, weight 400 throughout) */
+  /* Marketing display scale (Clarendon, weight 400 throughout) */
   --text-display-xl-size: 68px;
   --text-display-xl-leading: 1;
   --text-display-xl-tracking: -1.02px;
@@ -333,6 +330,16 @@
   --popover-max-height: 520px;
   --popover-padding: var(--space-lg);
   --control-height: 32px;
+}
+
+/*
+ * Vibrancy chrome — canvas must stay clear so Menu material shows through.
+ * Content colors (ink, accents, soft fills) are unchanged.
+ */
+html[data-chrome='vibrancy'] {
+  --color-canvas: transparent;
+  --color-surface: transparent;
+  --shadow-popover: none;
 }
 
 /* Dark theme overrides — present on granola.ai as html.dark. Optional here;
