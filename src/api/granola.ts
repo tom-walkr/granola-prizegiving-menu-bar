@@ -34,7 +34,7 @@ function isMockDataEnabled(): boolean {
 }
 
 function getApiKey(): string {
-  const key = import.meta.env.VITE_GRANOLA_API_KEY;
+  const key = import.meta.env.VITE_GRANOLA_API_KEY?.trim();
   if (!key) {
     throw new GranolaConfigError(
       'VITE_GRANOLA_API_KEY is not set. Add it to your .env file (see .env.example). ' +
@@ -42,6 +42,19 @@ function getApiKey(): string {
     );
   }
   return key;
+}
+
+/**
+ * Browser fetch hits CORS (Granola's OPTIONS preflight 404s). In Tauri, route
+ * through the Rust HTTP plugin instead. Storybook / plain Vite keep global fetch
+ * (mock mode, or real API only if CORS somehow works).
+ */
+async function appFetch(input: string, init?: RequestInit): Promise<Response> {
+  if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+    const { fetch: tauriFetch } = await import('@tauri-apps/plugin-http');
+    return tauriFetch(input, init);
+  }
+  return fetch(input, init);
 }
 
 function sleep(ms: number): Promise<void> {
@@ -99,7 +112,7 @@ async function requestJson<T>(path: string, attempt = 0): Promise<T> {
   const apiKey = getApiKey();
   await requestQueue.acquire();
 
-  const response = await fetch(`${BASE_URL}${path}`, {
+  const response = await appFetch(`${BASE_URL}${path}`, {
     headers: { Authorization: `Bearer ${apiKey}` },
   });
 
@@ -118,6 +131,26 @@ async function requestJson<T>(path: string, attempt = 0): Promise<T> {
   }
 
   return (await response.json()) as T;
+}
+
+/** User-facing copy for note-list / note-detail load failures. */
+export function describeGranolaLoadError(err: unknown): string {
+  if (err instanceof GranolaConfigError) {
+    return 'Add your API key to .env, then restart the app.';
+  }
+  if (err instanceof GranolaApiError && (err.status === 401 || err.status === 403)) {
+    return 'Check your API key in .env, then restart the app.';
+  }
+  if (
+    err instanceof TypeError ||
+    (err instanceof Error && /load failed|failed to fetch|networkerror/i.test(err.message))
+  ) {
+    return "Couldn't reach Granola. Check your API key, then restart the app.";
+  }
+  if (err instanceof Error && err.message.trim()) {
+    return err.message;
+  }
+  return "Couldn't load notes. Check your API key, then restart the app.";
 }
 
 function buildNotesQuery(params: ListNotesParams): string {

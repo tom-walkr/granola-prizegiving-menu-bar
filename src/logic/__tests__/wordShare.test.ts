@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { mockIosStandupNote, mockMacosOneOnOneNote } from '../../mocks/notes';
 import { computeSpeakerStats } from '../speakerStats';
-import { wordShareFromStats } from '../wordShare';
+import { formatTalkDuration, wordShareFromStats } from '../wordShare';
 
 describe('wordShareFromStats', () => {
-  it('returns per-speaker word totals that sum to the transcript', () => {
+  it('returns per-speaker word and time totals that sum to the transcript', () => {
     const stats = computeSpeakerStats(
       mockIosStandupNote.transcript ?? [],
       mockIosStandupNote.attendees
@@ -13,10 +13,14 @@ describe('wordShareFromStats', () => {
 
     expect(share.length).toBe(3);
     expect(share[0].words).toBeGreaterThanOrEqual(share[1].words);
-    const total = share.reduce((sum, entry) => sum + entry.words, 0);
-    const shareSum = share.reduce((sum, entry) => sum + entry.share, 0);
-    expect(shareSum).toBeCloseTo(1, 5);
-    expect(total).toBeGreaterThan(0);
+    const totalWords = share.reduce((sum, entry) => sum + entry.words, 0);
+    const totalSeconds = share.reduce((sum, entry) => sum + entry.seconds, 0);
+    const wordShareSum = share.reduce((sum, entry) => sum + entry.wordShare, 0);
+    const timeShareSum = share.reduce((sum, entry) => sum + entry.timeShare, 0);
+    expect(wordShareSum).toBeCloseTo(1, 5);
+    expect(timeShareSum).toBeCloseTo(1, 5);
+    expect(totalWords).toBeGreaterThan(0);
+    expect(totalSeconds).toBeGreaterThan(0);
   });
 
   it('supports the two-way you / rest split', () => {
@@ -24,6 +28,16 @@ describe('wordShareFromStats', () => {
     const share = wordShareFromStats(stats);
 
     expect(share.map((entry) => entry.name).sort()).toEqual(['Rest of call', 'You']);
-    expect(share.every((entry) => entry.words >= 0)).toBe(true);
+    expect(share.every((entry) => entry.words >= 0 && entry.seconds >= 0)).toBe(true);
+  });
+});
+
+describe('formatTalkDuration', () => {
+  it('formats under a minute as seconds only', () => {
+    expect(formatTalkDuration(45)).toBe('45s');
+  });
+
+  it('formats minutes and seconds', () => {
+    expect(formatTalkDuration(125)).toBe('2m 5s');
   });
 });

@@ -18,9 +18,9 @@ type Story = StoryObj<typeof WordShareChart>;
 export const ThreeSpeakers: Story = {
   args: {
     entries: [
-      { key: 'carol', name: 'Carol Diaz', words: 612, share: 0.52 },
-      { key: 'bob', name: 'Bob Jones', words: 428, share: 0.36 },
-      { key: 'alice', name: 'Alice Smith', words: 140, share: 0.12 },
+      { key: 'carol', name: 'Carol Diaz', words: 612, seconds: 420, wordShare: 0.52, timeShare: 0.48 },
+      { key: 'bob', name: 'Bob Jones', words: 428, seconds: 310, wordShare: 0.36, timeShare: 0.35 },
+      { key: 'alice', name: 'Alice Smith', words: 140, seconds: 150, wordShare: 0.12, timeShare: 0.17 },
     ],
   },
 };
@@ -28,8 +28,15 @@ export const ThreeSpeakers: Story = {
 export const TwoWay: Story = {
   args: {
     entries: [
-      { key: 'rest-of-call', name: 'Rest of call', words: 180, share: 0.72 },
-      { key: 'you', name: 'You', words: 70, share: 0.28 },
+      {
+        key: 'rest-of-call',
+        name: 'Rest of call',
+        words: 180,
+        seconds: 240,
+        wordShare: 0.72,
+        timeShare: 0.67,
+      },
+      { key: 'you', name: 'You', words: 70, seconds: 120, wordShare: 0.28, timeShare: 0.33 },
     ],
   },
 };

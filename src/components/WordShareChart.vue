@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import type { WordShareEntry } from '../logic/wordShare';
+import { computed, ref } from 'vue';
+import { formatTalkDuration, type WordShareEntry } from '../logic/wordShare';
+
+type ShareMode = 'words' | 'time';
 
 const props = defineProps<{
   entries: WordShareEntry[];
@@ -14,9 +16,23 @@ const DOT_COLORS = [
   'var(--color-dot-amber)',
 ] as const;
 
-const totalWords = computed(() =>
-  props.entries.reduce((sum, entry) => sum + entry.words, 0)
+const mode = ref<ShareMode>('words');
+
+const sortedEntries = computed(() => {
+  const list = [...props.entries];
+  if (mode.value === 'time') {
+    return list.sort((a, b) => b.seconds - a.seconds || a.name.localeCompare(b.name));
+  }
+  return list.sort((a, b) => b.words - a.words || a.name.localeCompare(b.name));
+});
+
+const totalValue = computed(() =>
+  mode.value === 'time'
+    ? props.entries.reduce((sum, entry) => sum + entry.seconds, 0)
+    : props.entries.reduce((sum, entry) => sum + entry.words, 0)
 );
+
+const hasData = computed(() => sortedEntries.value.length > 0 && totalValue.value > 0);
 
 function colorFor(index: number): string {
   return DOT_COLORS[index % DOT_COLORS.length];
@@ -25,44 +41,76 @@ function colorFor(index: number): string {
 function formatWords(words: number): string {
   return new Intl.NumberFormat('en-GB').format(words);
 }
+
+function valueOf(entry: WordShareEntry): number {
+  return mode.value === 'time' ? entry.seconds : entry.words;
+}
+
+function shareOf(entry: WordShareEntry): number {
+  return mode.value === 'time' ? entry.timeShare : entry.wordShare;
+}
+
+function formatValue(entry: WordShareEntry): string {
+  return mode.value === 'time' ? formatTalkDuration(entry.seconds) : formatWords(entry.words);
+}
+
+function formatTotal(): string {
+  return mode.value === 'time'
+    ? `${formatTalkDuration(totalValue.value)} total`
+    : `${formatWords(totalValue.value)} total`;
+}
+
+function toggleMode(): void {
+  mode.value = mode.value === 'words' ? 'time' : 'words';
+}
 </script>
 
 <template>
-  <section class="word-share" aria-label="Words per person">
+  <section
+    class="word-share"
+    :aria-label="mode === 'words' ? 'Words per person' : 'Talk time per person'"
+  >
     <header class="word-share__header">
-      <h3 class="word-share__title">Words</h3>
-      <p class="word-share__total">{{ formatWords(totalWords) }} total</p>
+      <h3 class="word-share__title">{{ mode === 'words' ? 'Words' : 'Time' }}</h3>
+      <p class="word-share__total">{{ formatTotal() }}</p>
     </header>
 
-    <div
-      v-if="entries.length > 0 && totalWords > 0"
+    <button
+      v-if="hasData"
+      type="button"
       class="word-share__bar"
-      role="img"
       :aria-label="
-        entries
-          .map((entry) => `${entry.name}: ${formatWords(entry.words)} words`)
-          .join(', ')
+        mode === 'words'
+          ? 'Show talk time share. ' +
+            sortedEntries
+              .map((entry) => `${entry.name}: ${formatWords(entry.words)} words`)
+              .join(', ')
+          : 'Show word share. ' +
+            sortedEntries
+              .map((entry) => `${entry.name}: ${formatTalkDuration(entry.seconds)}`)
+              .join(', ')
       "
+      @click="toggleMode"
     >
       <span
-        v-for="(entry, index) in entries"
+        v-for="(entry, index) in sortedEntries"
         :key="entry.key"
         class="word-share__segment"
         :style="{
-          flexGrow: entry.words,
+          flexGrow: valueOf(entry),
           background: colorFor(index),
         }"
-        :title="`${entry.name}: ${formatWords(entry.words)}`"
+        :title="`${entry.name}: ${formatValue(entry)}`"
       />
-    </div>
+    </button>
     <div v-else class="word-share__bar word-share__bar--empty" aria-hidden="true" />
 
     <ul class="word-share__legend">
-      <li v-for="(entry, index) in entries" :key="entry.key" class="word-share__row">
+      <li v-for="(entry, index) in sortedEntries" :key="entry.key" class="word-share__row">
         <span class="word-share__swatch" :style="{ background: colorFor(index) }" />
         <span class="word-share__name">{{ entry.name }}</span>
-        <span class="word-share__words">{{ formatWords(entry.words) }}</span>
-        <span class="word-share__pct">{{ Math.round(entry.share * 100) }}%</span>
+        <span class="word-share__value">{{ formatValue(entry) }}</span>
+        <span class="word-share__pct">{{ Math.round(shareOf(entry) * 100) }}%</span>
       </li>
     </ul>
   </section>
@@ -89,10 +137,9 @@ function formatWords(words: number): string {
   margin: 0;
   font-family: var(--font-sans);
   font-size: var(--text-xs-size);
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-medium);
   line-height: var(--text-xs-leading);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: var(--text-xs-tracking);
   color: var(--color-ink-muted);
 }
 
@@ -109,8 +156,18 @@ function formatWords(words: number): string {
   overflow: hidden;
   width: 100%;
   height: 12px;
+  margin: 0;
+  padding: 0;
+  border: 0;
   border-radius: var(--radius-pill);
   background: var(--oats-fill-soft-opaque);
+  cursor: pointer;
+  appearance: none;
+}
+
+.word-share__bar:focus-visible {
+  outline: 2px solid var(--color-fill-accent);
+  outline-offset: 2px;
 }
 
 .word-share__bar--empty {
@@ -120,6 +177,7 @@ function formatWords(words: number): string {
 .word-share__segment {
   min-width: 0;
   flex-basis: 0;
+  pointer-events: none;
   transition: flex-grow var(--duration-slow) var(--ease-out-expo);
 }
 
@@ -161,7 +219,7 @@ function formatWords(words: number): string {
   white-space: nowrap;
 }
 
-.word-share__words,
+.word-share__value,
 .word-share__pct {
   font-size: var(--text-xs-size);
   line-height: var(--text-xs-leading);

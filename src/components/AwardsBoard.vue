@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
-import { getNote } from '../api/granola';
+import { getNote, describeGranolaLoadError } from '../api/granola';
 import { computeAwards } from '../logic/awards';
 import type { AwardsResult } from '../logic/awards';
 import { computeSpeakerStats } from '../logic/speakerStats';
@@ -53,7 +53,7 @@ async function load(noteId: string): Promise<void> {
     result.value = computeAwards(nextStats);
     status.value = 'ready';
   } catch (err) {
-    errorMessage.value = err instanceof Error ? err.message : 'Something went wrong loading this note.';
+    errorMessage.value = describeGranolaLoadError(err);
     status.value = 'error';
   }
 }

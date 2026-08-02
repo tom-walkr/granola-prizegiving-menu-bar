@@ -47,8 +47,8 @@ textarea {
 h1,
 h2,
 h3 {
-  font-family: var(--font-display);
-  font-weight: var(--font-weight-normal);
+  font-family: inherit;
+  font-weight: var(--font-weight-medium);
   color: var(--color-ink);
 }
 

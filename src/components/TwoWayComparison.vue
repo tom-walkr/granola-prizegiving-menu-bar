@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { formatTalkDuration } from '../logic/wordShare';
+
 defineProps<{
   label: string;
   youName: string;
@@ -6,12 +8,6 @@ defineProps<{
   restName: string;
   restSeconds: number;
 }>();
-
-function formatDuration(seconds: number): string {
-  const minutes = Math.floor(seconds / 60);
-  const remaining = Math.round(seconds % 60);
-  return minutes > 0 ? `${minutes}m ${remaining}s` : `${remaining}s`;
-}
 </script>
 
 <template>
@@ -20,12 +16,12 @@ function formatDuration(seconds: number): string {
     <div class="two-way__split">
       <div class="two-way__side">
         <span class="two-way__name">{{ youName }}</span>
-        <span class="two-way__value">{{ formatDuration(youSeconds) }}</span>
+        <span class="two-way__value">{{ formatTalkDuration(youSeconds) }}</span>
       </div>
       <span class="two-way__vs" aria-hidden="true">vs</span>
       <div class="two-way__side two-way__side--rest">
         <span class="two-way__name">{{ restName }}</span>
-        <span class="two-way__value">{{ formatDuration(restSeconds) }}</span>
+        <span class="two-way__value">{{ formatTalkDuration(restSeconds) }}</span>
       </div>
     </div>
   </article>
@@ -43,12 +39,12 @@ function formatDuration(seconds: number): string {
 
 .two-way__label {
   margin: 0;
-  font-family: var(--font-display);
-  font-size: var(--text-lg-size);
-  font-weight: var(--font-weight-normal);
-  line-height: 1.3;
-  letter-spacing: -0.01em;
-  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs-size);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--text-xs-leading);
+  letter-spacing: var(--text-xs-tracking);
+  color: var(--color-ink-muted);
 }
 
 .two-way__split {

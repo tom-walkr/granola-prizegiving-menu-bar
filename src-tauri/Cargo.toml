@@ -24,3 +24,4 @@ log = "0.4"
 tauri = { version = "2.11.3", features = ["tray-icon", "image-png", "macos-private-api"] }
 tauri-plugin-log = "2"
 tauri-plugin-positioner = { version = "2.3.3", features = ["tray-icon"] }
+tauri-plugin-http = "^2"

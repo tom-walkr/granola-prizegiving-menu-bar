@@ -15,8 +15,10 @@ second pass.
 - macOS only for now. `src-tauri/tauri.conf.json` bundles `app` and `dmg`
   targets only.
 - No backend service. The frontend calls `https://public-api.granola.ai/v1`
-  directly with a user-supplied API key. The Rust side only owns the tray
-  icon, the popover window, and app lifecycle.
+  with a user-supplied API key. Inside the Tauri shell those requests go
+  through `tauri-plugin-http` (browser `fetch` fails: Granola's CORS
+  preflight returns 404). The Rust side still owns the tray icon, popover
+  window, and app lifecycle — not business logic.
 - Storybook runs standalone against Vite, not inside the Tauri shell.
 - Composition API + `<script setup>` everywhere. Plain composables/functions
   over Pinia — nothing here is shared across enough components to need a
@@ -35,6 +37,11 @@ second pass.
 - Auth key comes from `VITE_GRANOLA_API_KEY`. If it's missing, functions
   throw `GranolaConfigError` immediately — no silent fallback to mock data.
   Mock data only activates when `VITE_USE_MOCK_DATA=true` is set explicitly.
+  Vite only reads `.env` at process start — restart `npm run dev` after
+  changing the key.
+- In Tauri, `appFetch` uses `@tauri-apps/plugin-http` (scoped to
+  `https://public-api.granola.ai/*` in `capabilities/default.json`). Plain
+  Vite / Storybook keep global `fetch`.
 - `getNote` returns `null` on a 404, it does not throw. A 404 means the note
   is still processing or was never summarized — that's an expected state,
   not an error. Render it as "not ready yet" in the UI, not as a failure.
@@ -42,7 +49,8 @@ second pass.
   seconds (which is also the sustained 5 req/s limit — same constraint,
   same window). A 429 retries with backoff, capped at 3 retries total.
 - Don't add a try/catch-and-fall-back-to-mock anywhere in this file. If mock
-  mode is off and a request fails, let it fail.
+  mode is off and a request fails, let it fail. Map failures to friendly
+  copy with `describeGranolaLoadError` in the UI.
 
 ## The diarization split (`src/logic/speakerStats.ts`)
 
@@ -104,11 +112,12 @@ opaque parchment (`data-chrome="flat"`). Override brand feel via chrome
 variables (`--chrome-tint`, `--chrome-row-hover`) and oats tokens — don't
 paint an opaque full-window canvas in Tauri mode.
 
-Components still render mostly unstyled markup beyond chrome + document
-defaults — the visual pass should consume the tokens, not invent new
-hexes. Don't redistribute Melange/Quadrant; UI uses the system stack
-(Granola's own macOS app uses SF Pro), display headings use Clarendon
-Text Pro via Adobe Fonts (Typekit kit `jyo7jul`, linked from `index.html`).
+Components should prefer the meeting-date heading style (small muted
+sans) over display type. Clarendon (`--font-display`) is reserved for the
+popover brand title — don't use it for section labels, award winners, or
+body copy. Don't redistribute Melange/Quadrant; UI uses the system stack
+(Granola's own macOS app uses SF Pro). Clarendon Text Pro is loaded via
+Adobe Fonts (Typekit kit `jyo7jul`, linked from `index.html`).
 
 ## Storybook
 

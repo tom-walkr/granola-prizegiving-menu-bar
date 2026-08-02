@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue';
-import { listAllNotes } from '../api/granola';
+import { describeGranolaLoadError, listAllNotes } from '../api/granola';
 import type { NoteListItem } from '../api/types';
+import granolaLogo from '../assets/granola-pg-logo.svg';
 import MeetingList from './MeetingList.vue';
 
 const DEFAULT_POLL_INTERVAL_MS = 5 * 60 * 1000;
@@ -36,7 +37,7 @@ async function loadNotes(): Promise<void> {
   }
   if (props.forcedStatus === 'error') {
     isLoading.value = false;
-    error.value = 'Failed to load notes.';
+    error.value = 'Check your API key in .env, then restart the app.';
     return;
   }
   if (props.forcedStatus === 'empty') {
@@ -51,7 +52,7 @@ async function loadNotes(): Promise<void> {
     notes.value = await listAllNotes();
     lastFetchAt = Date.now();
   } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Failed to load notes.';
+    error.value = describeGranolaLoadError(err);
   } finally {
     isLoading.value = false;
   }
@@ -76,8 +77,33 @@ defineExpose({ refresh });
 
 <template>
   <section class="note-selector" aria-label="Recent notes">
-    <p v-if="isLoading && notes.length === 0" class="note-selector__status">Loading notes…</p>
-    <p v-else-if="error" class="note-selector__status" role="alert">{{ error }}</p>
+    <div
+      v-if="isLoading && notes.length === 0"
+      class="note-selector__message"
+      aria-live="polite"
+    >
+      <img
+        class="note-selector__message-mark"
+        :src="granolaLogo"
+        alt=""
+        width="36"
+        height="36"
+      />
+      <p class="note-selector__message-title">Loading notes…</p>
+    </div>
+
+    <div v-else-if="error" class="note-selector__message" role="alert">
+      <img
+        class="note-selector__message-mark"
+        :src="granolaLogo"
+        alt=""
+        width="36"
+        height="36"
+      />
+      <p class="note-selector__message-title">Couldn't load notes</p>
+      <p class="note-selector__message-hint">{{ error }}</p>
+    </div>
+
     <p v-else-if="notes.length === 0" class="note-selector__status">No notes found.</p>
     <MeetingList
       v-else-if="showList"
@@ -89,11 +115,56 @@ defineExpose({ refresh });
 </template>
 
 <style scoped>
+.note-selector {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
 .note-selector__status {
   margin: 0;
   padding: var(--space-base) var(--space-md);
   font-size: var(--text-sm-size);
   line-height: var(--text-sm-leading);
   color: var(--color-ink-muted);
+}
+
+.note-selector__message {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  min-height: 180px;
+  padding: var(--space-xl) var(--space-lg);
+  text-align: center;
+}
+
+.note-selector__message-mark {
+  display: block;
+  width: 36px;
+  height: 36px;
+  margin-bottom: var(--space-xs);
+  opacity: 0.9;
+}
+
+.note-selector__message-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-award-title-size);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--text-award-title-leading);
+  letter-spacing: var(--text-award-title-tracking);
+  color: var(--color-ink);
+}
+
+.note-selector__message-hint {
+  margin: 0;
+  max-width: 22em;
+  font-size: var(--text-sm-size);
+  line-height: var(--text-sm-leading);
+  color: var(--color-ink-quiet);
 }
 </style>

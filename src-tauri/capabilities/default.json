@@ -8,6 +8,10 @@
   "permissions": [
     "core:default",
     "core:window:allow-set-effects",
-    "core:window:allow-theme"
+    "core:window:allow-theme",
+    {
+      "identifier": "http:default",
+      "allow": [{ "url": "https://public-api.granola.ai/*" }]
+    }
   ]
 }
