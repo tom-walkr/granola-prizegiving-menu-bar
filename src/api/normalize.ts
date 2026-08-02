@@ -28,17 +28,22 @@ export interface ApiNotesListResponse {
 }
 
 interface ApiSpeaker {
-  source: TranscriptSource;
+  source?: TranscriptSource;
   diarization_label?: string;
   name?: string;
   attribution?: 'me' | 'them';
 }
 
-interface ApiTranscriptUtterance {
-  speaker: ApiSpeaker;
-  text: string;
-  start_time: string;
-  end_time: string;
+/** Real payloads use ISO `start_time`/`end_time`; be liberal — field names have drifted. */
+export interface ApiTranscriptUtterance {
+  speaker?: ApiSpeaker;
+  text?: string;
+  start_time?: string | number | null;
+  end_time?: string | number | null;
+  startTime?: string | number | null;
+  endTime?: string | number | null;
+  start_timestamp?: string | number | null;
+  end_timestamp?: string | number | null;
 }
 
 export interface ApiNoteDetail extends ApiNoteListItem {
@@ -63,31 +68,133 @@ export function normalizeNoteListItem(raw: ApiNoteListItem): NoteListItem {
   };
 }
 
+function firstPresent(utterance: ApiTranscriptUtterance, keys: (keyof ApiTranscriptUtterance)[]): unknown {
+  for (const key of keys) {
+    const value = utterance[key];
+    if (value != null && value !== '') return value;
+  }
+  return undefined;
+}
+
+/** True for values that are elapsed seconds, not clock times. */
+function isRelativeSeconds(value: unknown): value is number {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) && Math.abs(value) < 1e8;
+  }
+  if (typeof value === 'string' && /^-?\d+(\.\d+)?$/.test(value.trim())) {
+    const n = Number(value);
+    return Number.isFinite(n) && Math.abs(n) < 1e8;
+  }
+  return false;
+}
+
 /**
- * Convert absolute ISO start/end times into seconds-from-recording-start so
+ * Parse an API clock time to UTC epoch ms.
+ * Prefer a manual ISO parse — some webviews are flaky with Date.parse on
+ * fractional-second ISO strings, which zeroed out every talk-time award.
+ */
+export function parseApiTimeToMs(value: unknown): number | null {
+  if (value == null || value === '') return null;
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    if (value >= 1e12) return value; // epoch ms
+    if (value >= 1e9) return value * 1000; // epoch seconds
+    return null; // relative seconds — handled elsewhere
+  }
+
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed || isRelativeSeconds(trimmed)) return null;
+
+  const match = trimmed.match(
+    /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,9}))?(?:Z|[+-]\d{2}:?\d{2})?$/i
+  );
+  if (match) {
+    const ms = (match[7] ?? '0').padEnd(3, '0').slice(0, 3);
+    return Date.UTC(
+      Number(match[1]),
+      Number(match[2]) - 1,
+      Number(match[3]),
+      Number(match[4]),
+      Number(match[5]),
+      Number(match[6]),
+      Number(ms)
+    );
+  }
+
+  const parsed = Date.parse(trimmed);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function relativeSecondsFrom(value: unknown): number | null {
+  if (!isRelativeSeconds(value)) return null;
+  return typeof value === 'number' ? value : Number(value);
+}
+
+function minFinite(values: number[]): number | null {
+  let min: number | null = null;
+  for (const value of values) {
+    if (!Number.isFinite(value)) continue;
+    if (min === null || value < min) min = value;
+  }
+  return min;
+}
+
+/**
+ * Convert API transcript timings into seconds-from-recording-start so
  * duration math in speakerStats stays plain subtraction.
  */
 export function normalizeTranscript(
   raw: ApiTranscriptUtterance[] | null | undefined
 ): TranscriptUtterance[] | undefined {
   if (raw == null) return undefined;
-  if (raw.length === 0) return [];
+  if (!Array.isArray(raw) || raw.length === 0) return [];
 
-  const epochMs = Math.min(...raw.map((u) => Date.parse(u.start_time)));
-  if (!Number.isFinite(epochMs)) return [];
+  const startKeys = ['start_time', 'startTime', 'start_timestamp'] as const;
+  const endKeys = ['end_time', 'endTime', 'end_timestamp'] as const;
 
-  return raw.map((u) => ({
-    speaker: {
-      source: u.speaker.source,
-      ...(u.speaker.diarization_label
-        ? { diarization_label: u.speaker.diarization_label }
-        : {}),
-    },
-    text: u.text,
-    start_timestamp: Math.max(0, (Date.parse(u.start_time) - epochMs) / 1000),
-    end_timestamp: Math.max(0, (Date.parse(u.end_time) - epochMs) / 1000),
-    confidence: 1,
-  }));
+  const absoluteStarts = raw.map((u) => parseApiTimeToMs(firstPresent(u, [...startKeys])));
+  const epochMs = minFinite(absoluteStarts.filter((v): v is number => v != null));
+
+  return raw.map((utterance, index) => {
+    const startRaw = firstPresent(utterance, [...startKeys]);
+    const endRaw = firstPresent(utterance, [...endKeys]);
+
+    let startTimestamp = 0;
+    let endTimestamp = 0;
+
+    if (epochMs != null) {
+      const startAbs = parseApiTimeToMs(startRaw) ?? absoluteStarts[index] ?? epochMs;
+      const endAbs = parseApiTimeToMs(endRaw) ?? startAbs;
+      startTimestamp = Math.max(0, (startAbs - epochMs) / 1000);
+      endTimestamp = Math.max(0, (endAbs - epochMs) / 1000);
+    } else {
+      startTimestamp = relativeSecondsFrom(startRaw) ?? 0;
+      endTimestamp = relativeSecondsFrom(endRaw) ?? startTimestamp;
+    }
+
+    if (endTimestamp < startTimestamp) {
+      endTimestamp = startTimestamp;
+    }
+
+    const source: TranscriptSource =
+      utterance.speaker?.source === 'microphone' || utterance.speaker?.source === 'speaker'
+        ? utterance.speaker.source
+        : 'speaker';
+
+    return {
+      speaker: {
+        source,
+        ...(utterance.speaker?.diarization_label
+          ? { diarization_label: utterance.speaker.diarization_label }
+          : {}),
+      },
+      text: utterance.text ?? '',
+      start_timestamp: startTimestamp,
+      end_timestamp: endTimestamp,
+      confidence: 1,
+    };
+  });
 }
 
 export function normalizeNote(raw: ApiNoteDetail): Note {

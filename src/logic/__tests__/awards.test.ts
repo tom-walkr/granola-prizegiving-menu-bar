@@ -28,4 +28,37 @@ describe('computeAwards', () => {
     if (result.mode !== 'two-way') throw new Error('unreachable');
     expect(result.label).toBe('You talked less than the rest of the call');
   });
+
+  it('omits awards whose winning metric is zero', () => {
+    const result = computeAwards({
+      mode: 'full',
+      speakers: [
+        {
+          key: 'a',
+          displayName: 'Alice',
+          totalDurationSeconds: 60,
+          wordCount: 120,
+          wordsPerMinute: 120,
+          utteranceCount: 2,
+          overlapCount: 0,
+          longestUtterance: { text: 'hello world', durationSeconds: 30 },
+        },
+        {
+          key: 'b',
+          displayName: 'Bob',
+          totalDurationSeconds: 40,
+          wordCount: 80,
+          wordsPerMinute: 120,
+          utteranceCount: 1,
+          overlapCount: 0,
+          longestUtterance: { text: 'hey', durationSeconds: 40 },
+        },
+      ],
+    });
+
+    expect(result.mode).toBe('full');
+    if (result.mode !== 'full') throw new Error('unreachable');
+    expect(result.awards.map((award) => award.id)).not.toContain('most-interruptions');
+    expect(result.awards.some((award) => award.id === 'chatterbox')).toBe(true);
+  });
 });

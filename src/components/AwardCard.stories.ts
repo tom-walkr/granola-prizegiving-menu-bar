@@ -20,16 +20,16 @@ export const LongestMonologue: Story = {
     awardId: 'longest-monologue',
     title: 'Longest Monologue',
     winnerName: 'Bob Jones',
-    value: '3m 0s',
+    metric: '3m 0s',
   },
 };
 
-export const QuietestMouse: Story = {
+export const Quietest: Story = {
   args: {
     awardId: 'quietest-mouse',
     title: 'Quietest Mouse',
     winnerName: 'Alice Smith',
-    value: '11s',
+    metric: '11s',
   },
 };
 
@@ -38,7 +38,7 @@ export const Chatterbox: Story = {
     awardId: 'chatterbox',
     title: 'Chatterbox',
     winnerName: 'Carol Diaz',
-    value: '3m 35s',
+    metric: '3m 35s',
   },
 };
 
@@ -47,7 +47,7 @@ export const FastestTalker: Story = {
     awardId: 'fastest-talker',
     title: 'Fastest Talker',
     winnerName: 'Carol Diaz',
-    value: '160 wpm',
+    metric: '160 wpm',
   },
 };
 
@@ -56,6 +56,6 @@ export const MostInterruptions: Story = {
     awardId: 'most-interruptions',
     title: 'Most Interruptions (approx.)',
     winnerName: 'Alice Smith',
-    value: '3',
+    metric: '3',
   },
 };

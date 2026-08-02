@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { formatTalkDuration } from '../logic/wordShare';
 
-defineProps<{
+const props = defineProps<{
   label: string;
   youName: string;
   youSeconds: number;
@@ -16,12 +16,12 @@ defineProps<{
     <div class="two-way__split">
       <div class="two-way__side">
         <span class="two-way__name">{{ youName }}</span>
-        <span class="two-way__value">{{ formatTalkDuration(youSeconds) }}</span>
+        <span class="two-way__value">{{ formatTalkDuration(props.youSeconds) }}</span>
       </div>
       <span class="two-way__vs" aria-hidden="true">vs</span>
       <div class="two-way__side two-way__side--rest">
         <span class="two-way__name">{{ restName }}</span>
-        <span class="two-way__value">{{ formatTalkDuration(restSeconds) }}</span>
+        <span class="two-way__value">{{ formatTalkDuration(props.restSeconds) }}</span>
       </div>
     </div>
   </article>

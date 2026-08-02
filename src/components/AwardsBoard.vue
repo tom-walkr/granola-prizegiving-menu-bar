@@ -2,9 +2,10 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { getNote, describeGranolaLoadError } from '../api/granola';
 import clipboardIcon from '../assets/clipboard.svg?raw';
+import slackIcon from '../assets/slack.svg?raw';
 import { computeAwards } from '../logic/awards';
 import type { AwardsResult } from '../logic/awards';
-import { formatAwardsForSlack } from '../logic/slackSummary';
+import { formatAwardsForSlack, formatAwardsPlain } from '../logic/slackSummary';
 import { computeSpeakerStats } from '../logic/speakerStats';
 import type { SpeakerStats } from '../logic/speakerStats';
 import { wordShareFromStats } from '../logic/wordShare';
@@ -14,6 +15,8 @@ import TwoWayComparison from './TwoWayComparison.vue';
 import WordShareChart from './WordShareChart.vue';
 
 type Status = 'loading' | 'ready' | 'not-ready' | 'empty' | 'error';
+type CopyKind = 'plain' | 'slack';
+type CopyFeedback = 'idle' | 'copied' | 'failed';
 
 const COPY_RESET_MS = 2000;
 
@@ -25,14 +28,19 @@ const props = defineProps<{
 
 const status = ref<Status>('loading');
 const errorMessage = ref('');
-const result = ref<AwardsResult | null>(null);
 const stats = ref<SpeakerStats | null>(null);
 const meetingTitle = ref('');
 const meetingCreatedAt = ref('');
 const loadedNoteId = ref<string | null>(null);
-const copyState = ref<'idle' | 'copied' | 'failed'>('idle');
+const plainCopyState = ref<CopyFeedback>('idle');
+const slackCopyState = ref<CopyFeedback>('idle');
 
-let copyResetHandle: ReturnType<typeof setTimeout> | undefined;
+const copyResetHandles: Partial<Record<CopyKind, ReturnType<typeof setTimeout>>> = {};
+
+/** Always derive awards from current stats so values stay in sync with the share chart. */
+const result = computed<AwardsResult | null>(() =>
+  stats.value ? computeAwards(stats.value) : null
+);
 
 const wordShare = computed(() => (stats.value ? wordShareFromStats(stats.value) : []));
 
@@ -49,29 +57,53 @@ const showContent = computed(
     loadedNoteId.value === props.noteId
 );
 
-const copyLabel = computed(() => {
-  if (copyState.value === 'copied') return 'Copied!';
-  if (copyState.value === 'failed') return 'Copy failed';
-  return 'Copy';
-});
+const plainCopyLabel = computed(() => copyLabel(plainCopyState.value, 'Copy'));
+const slackCopyLabel = computed(() => copyLabel(slackCopyState.value, 'Copy for Slack'));
+
+function copyLabel(state: CopyFeedback, idle: string): string {
+  if (state === 'copied') return 'Copied!';
+  if (state === 'failed') return 'Copy failed';
+  return idle;
+}
+
+function copyStateRef(kind: CopyKind) {
+  return kind === 'plain' ? plainCopyState : slackCopyState;
+}
+
+function resetCopyFeedback(): void {
+  plainCopyState.value = 'idle';
+  slackCopyState.value = 'idle';
+  (Object.keys(copyResetHandles) as CopyKind[]).forEach((kind) => {
+    const handle = copyResetHandles[kind];
+    if (handle) clearTimeout(handle);
+    delete copyResetHandles[kind];
+  });
+}
+
+function scheduleCopyReset(kind: CopyKind): void {
+  const existing = copyResetHandles[kind];
+  if (existing) clearTimeout(existing);
+  copyResetHandles[kind] = setTimeout(() => {
+    copyStateRef(kind).value = 'idle';
+    delete copyResetHandles[kind];
+  }, COPY_RESET_MS);
+}
 
 function clearMeeting(): void {
-  result.value = null;
   stats.value = null;
   meetingTitle.value = '';
   meetingCreatedAt.value = '';
   loadedNoteId.value = null;
-  copyState.value = 'idle';
+  resetCopyFeedback();
 }
 
 async function load(noteId: string): Promise<void> {
   status.value = 'loading';
   errorMessage.value = '';
-  copyState.value = 'idle';
+  resetCopyFeedback();
 
   // Drop stale awards when switching notes so we don't flash the wrong meeting.
   if (loadedNoteId.value !== noteId) {
-    result.value = null;
     stats.value = null;
     meetingTitle.value = '';
     meetingCreatedAt.value = '';
@@ -97,9 +129,7 @@ async function load(noteId: string): Promise<void> {
       status.value = 'empty';
       return;
     }
-    const nextStats = computeSpeakerStats(note.transcript, note.attendees);
-    stats.value = nextStats;
-    result.value = computeAwards(nextStats);
+    stats.value = computeSpeakerStats(note.transcript, note.attendees);
     meetingTitle.value = note.title;
     meetingCreatedAt.value = note.created_at;
     loadedNoteId.value = noteId;
@@ -111,25 +141,59 @@ async function load(noteId: string): Promise<void> {
   }
 }
 
-async function copyForSlack(): Promise<void> {
+async function writePlainClipboard(text: string): Promise<void> {
+  await navigator.clipboard.writeText(text);
+}
+
+/** Slack needs text/html on the clipboard — *mrkdwn* plain paste stays literal. */
+async function writeSlackClipboard(plain: string, html: string): Promise<void> {
+  // WKWebView (Tauri) expects Promise values on ClipboardItem.
+  await navigator.clipboard.write([
+    new ClipboardItem({
+      'text/plain': Promise.resolve(new Blob([plain], { type: 'text/plain' })),
+      'text/html': Promise.resolve(new Blob([html], { type: 'text/html' })),
+    }),
+  ]);
+}
+
+async function copyPlain(): Promise<void> {
   if (!result.value || !meetingTitle.value) return;
 
-  const text = formatAwardsForSlack(
+  const text = formatAwardsPlain(
     { title: meetingTitle.value, createdAt: meetingCreatedAt.value },
     result.value
   );
 
   try {
-    await navigator.clipboard.writeText(text);
-    copyState.value = 'copied';
+    await writePlainClipboard(text);
+    plainCopyState.value = 'copied';
   } catch {
-    copyState.value = 'failed';
+    plainCopyState.value = 'failed';
   }
+  scheduleCopyReset('plain');
+}
 
-  if (copyResetHandle) clearTimeout(copyResetHandle);
-  copyResetHandle = setTimeout(() => {
-    copyState.value = 'idle';
-  }, COPY_RESET_MS);
+async function copyForSlack(): Promise<void> {
+  if (!result.value || !meetingTitle.value) return;
+
+  const { plain, html } = formatAwardsForSlack(
+    { title: meetingTitle.value, createdAt: meetingCreatedAt.value },
+    result.value
+  );
+
+  try {
+    await writeSlackClipboard(plain, html);
+    slackCopyState.value = 'copied';
+  } catch {
+    // Fall back to plain if rich clipboard write isn't available.
+    try {
+      await writePlainClipboard(plain);
+      slackCopyState.value = 'copied';
+    } catch {
+      slackCopyState.value = 'failed';
+    }
+  }
+  scheduleCopyReset('slack');
 }
 
 onMounted(() => load(props.noteId));
@@ -138,7 +202,7 @@ watch(
   (noteId) => load(noteId)
 );
 onUnmounted(() => {
-  if (copyResetHandle) clearTimeout(copyResetHandle);
+  resetCopyFeedback();
 });
 </script>
 
@@ -181,7 +245,7 @@ onUnmounted(() => {
           :award-id="award.id"
           :title="award.title"
           :winner-name="award.winnerName"
-          :value="award.value"
+          :metric="award.value"
         />
       </div>
 
@@ -199,15 +263,33 @@ onUnmounted(() => {
           type="button"
           class="awards-board__copy"
           :class="{
-            'is-copied': copyState === 'copied',
-            'is-failed': copyState === 'failed',
+            'is-copied': plainCopyState === 'copied',
+            'is-failed': plainCopyState === 'failed',
           }"
-          :aria-label="copyLabel"
-          :title="copyLabel"
-          @click="copyForSlack"
+          :aria-label="plainCopyLabel"
+          :title="plainCopyLabel"
+          @click="copyPlain"
         >
           <span class="awards-board__copy-icon" aria-hidden="true" v-html="clipboardIcon" />
-          <span class="awards-board__copy-label">{{ copyLabel }}</span>
+          <span class="awards-board__copy-label">{{ plainCopyLabel }}</span>
+        </button>
+        <button
+          type="button"
+          class="awards-board__copy"
+          :class="{
+            'is-copied': slackCopyState === 'copied',
+            'is-failed': slackCopyState === 'failed',
+          }"
+          :aria-label="slackCopyLabel"
+          :title="slackCopyLabel"
+          @click="copyForSlack"
+        >
+          <span
+            class="awards-board__copy-icon"
+            aria-hidden="true"
+            v-html="slackIcon"
+          />
+          <span class="awards-board__copy-label">{{ slackCopyLabel }}</span>
         </button>
       </div>
     </template>
@@ -224,7 +306,9 @@ onUnmounted(() => {
 
 .awards-board__toolbar {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
+  gap: var(--space-xs);
 }
 
 .awards-board__copy {
@@ -271,6 +355,7 @@ onUnmounted(() => {
   display: inline-flex;
   width: 14px;
   height: 14px;
+  flex-shrink: 0;
 }
 
 .awards-board__copy-icon :deep(svg) {

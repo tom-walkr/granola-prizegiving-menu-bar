@@ -62,7 +62,18 @@ function finalize(acc: Accumulator): SpeakerProfile {
 }
 
 function utteranceDuration(utterance: TranscriptUtterance): number {
-  return Math.max(0, utterance.end_timestamp - utterance.start_timestamp);
+  const start = Number(utterance.start_timestamp);
+  const end = Number(utterance.end_timestamp);
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return 0;
+  return Math.max(0, end - start);
+}
+
+/** Fallback when Granola returns equal start/end (common on memos / dictation). */
+const WORDS_PER_MINUTE_ESTIMATE = 150;
+
+function estimateDurationFromWords(wordCount: number): number {
+  if (wordCount <= 0) return 0;
+  return (wordCount / WORDS_PER_MINUTE_ESTIMATE) * 60;
 }
 
 function countWords(text: string): number {
@@ -83,10 +94,16 @@ function accumulate(
     const acc = accumulators.get(key);
     if (!acc) return;
 
-    const duration = utteranceDuration(utterance);
+    const words = countWords(utterance.text);
+    let duration = utteranceDuration(utterance);
+    // Timed span missing or zero — estimate from words so awards aren't all "0s".
+    if (duration <= 0 && words > 0) {
+      duration = estimateDurationFromWords(words);
+    }
+
     acc.totalDurationSeconds += duration;
     acc.utteranceCount += 1;
-    acc.wordCount += countWords(utterance.text);
+    acc.wordCount += words;
 
     if (!acc.longestUtterance || duration > acc.longestUtterance.durationSeconds) {
       acc.longestUtterance = { durationSeconds: duration, text: utterance.text };

@@ -1,3 +1,4 @@
+import { formatTalkDuration } from './wordShare';
 import type { SpeakerProfile, SpeakerStats } from './speakerStats';
 
 export type AwardId =
@@ -13,6 +14,8 @@ export interface AwardDefinition {
   /** True for awards that only feel like a real "prize" with 3+ named speakers. */
   requiresFullBreakdown: boolean;
   pickWinner: (speakers: SpeakerProfile[]) => SpeakerProfile | undefined;
+  /** Numeric metric shown on the card — awards with a non-positive score are omitted. */
+  score: (speaker: SpeakerProfile) => number;
   formatValue: (speaker: SpeakerProfile) => string;
 }
 
@@ -58,9 +61,7 @@ function minBy(
 }
 
 function formatDuration(seconds: number): string {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = Math.round(seconds % 60);
-  return minutes > 0 ? `${minutes}m ${remainingSeconds}s` : `${remainingSeconds}s`;
+  return formatTalkDuration(seconds);
 }
 
 export const AWARD_DEFINITIONS: AwardDefinition[] = [
@@ -73,6 +74,7 @@ export const AWARD_DEFINITIONS: AwardDefinition[] = [
         speakers.filter((speaker) => speaker.longestUtterance),
         (speaker) => speaker.longestUtterance?.durationSeconds ?? 0
       ),
+    score: (speaker) => speaker.longestUtterance?.durationSeconds ?? 0,
     formatValue: (speaker) =>
       speaker.longestUtterance ? formatDuration(speaker.longestUtterance.durationSeconds) : '—',
   },
@@ -81,6 +83,7 @@ export const AWARD_DEFINITIONS: AwardDefinition[] = [
     title: 'Quietest Mouse',
     requiresFullBreakdown: true,
     pickWinner: (speakers) => minBy(speakers, (speaker) => speaker.totalDurationSeconds),
+    score: (speaker) => speaker.totalDurationSeconds,
     formatValue: (speaker) => formatDuration(speaker.totalDurationSeconds),
   },
   {
@@ -88,6 +91,7 @@ export const AWARD_DEFINITIONS: AwardDefinition[] = [
     title: 'Chatterbox',
     requiresFullBreakdown: false,
     pickWinner: (speakers) => maxBy(speakers, (speaker) => speaker.totalDurationSeconds),
+    score: (speaker) => speaker.totalDurationSeconds,
     formatValue: (speaker) => formatDuration(speaker.totalDurationSeconds),
   },
   {
@@ -95,6 +99,7 @@ export const AWARD_DEFINITIONS: AwardDefinition[] = [
     title: 'Fastest Talker',
     requiresFullBreakdown: false,
     pickWinner: (speakers) => maxBy(speakers, (speaker) => speaker.wordsPerMinute),
+    score: (speaker) => speaker.wordsPerMinute,
     formatValue: (speaker) => `${Math.round(speaker.wordsPerMinute)} wpm`,
   },
   {
@@ -102,6 +107,7 @@ export const AWARD_DEFINITIONS: AwardDefinition[] = [
     title: 'Most Interruptions (approx.)',
     requiresFullBreakdown: false,
     pickWinner: (speakers) => maxBy(speakers, (speaker) => speaker.overlapCount),
+    score: (speaker) => speaker.overlapCount,
     formatValue: (speaker) => `${speaker.overlapCount}`,
   },
 ];
@@ -139,7 +145,8 @@ export function computeAwards(stats: SpeakerStats): AwardsResult {
 
   const awards = AWARD_DEFINITIONS.reduce<AwardResult[]>((results, definition) => {
     const winner = definition.pickWinner(stats.speakers);
-    if (!winner) return results;
+    // A zero-value award (0 interruptions, 0s talk time, …) isn't a prize.
+    if (!winner || definition.score(winner) <= 0) return results;
     results.push({
       id: definition.id,
       title: definition.title,

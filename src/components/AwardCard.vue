@@ -8,7 +8,7 @@ const props = defineProps<{
   awardId: AwardId;
   title: string;
   winnerName: string;
-  value: string;
+  metric: string;
 }>();
 
 const initials = computed(() => initialsFromTitle(props.winnerName));
@@ -25,7 +25,7 @@ const initials = computed(() => initialsFromTitle(props.winnerName));
       <MeetingAvatar :initials="initials" />
       <div class="award-card__copy">
         <p class="award-card__winner">{{ winnerName }}</p>
-        <p class="award-card__value">{{ value }}</p>
+        <p class="award-card__value">{{ metric }}</p>
       </div>
     </div>
   </article>

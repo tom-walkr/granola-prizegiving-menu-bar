@@ -72,6 +72,20 @@ describe('computeSpeakerStats', () => {
     expect(stats.restOfCall.utteranceCount).toBe(0);
   });
 
+  it('estimates duration from words when start and end timestamps are equal', () => {
+    const text =
+      'This is a long voice memo where Granola stamped the same start and end time on the utterance.';
+    const stats = computeSpeakerStats([
+      utterance('Speaker A', 'microphone', 0, 0, text),
+    ]);
+
+    expect(stats.mode).toBe('full');
+    if (stats.mode !== 'full') throw new Error('unreachable');
+    expect(stats.speakers[0].wordCount).toBeGreaterThan(0);
+    expect(stats.speakers[0].totalDurationSeconds).toBeGreaterThan(0);
+    expect(stats.speakers[0].wordsPerMinute).toBeCloseTo(150, 0);
+  });
+
   it('counts an overlapping utterance as an interruption for the interrupting speaker', () => {
     const utterances = [
       utterance('alice', 'microphone', 0, 10, 'Talking about the roadmap for a while now.'),
