@@ -331,6 +331,9 @@
   --popover-max-height: 520px;
   --popover-padding: var(--space-lg);
   --control-height: 32px;
+
+  /* Vertical rhythm between stacked sections / award rows */
+  --stack-gap: var(--space-md);
 }
 
 /*

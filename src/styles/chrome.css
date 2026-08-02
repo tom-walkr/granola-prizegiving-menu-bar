@@ -14,7 +14,7 @@
 :root {
   --chrome-radius: 12px;
   --chrome-padding: var(--space-md);
-  --chrome-gap: var(--space-sm);
+  --chrome-gap: var(--stack-gap);
   --chrome-tint: var(--oats-fill-accent-highlight); /* brand green wash */
   --chrome-row-hover: var(--oats-fill-soft);
   --chrome-divider: var(--color-border);

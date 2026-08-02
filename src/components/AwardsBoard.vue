@@ -110,7 +110,7 @@ watch(
 .awards-board {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  gap: var(--stack-gap);
   min-width: 0;
 }
 
@@ -125,7 +125,7 @@ watch(
 .awards-board__grid {
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: var(--stack-gap);
 }
 
 .awards-board__card {
