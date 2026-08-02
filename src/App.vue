@@ -2,7 +2,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { onMounted, ref, useTemplateRef } from 'vue';
-import granolaLogo from './assets/granola-logo.svg';
+import granolaLogo from './assets/granola-pg-logo.svg';
 import AwardsBoard from './components/AwardsBoard.vue';
 import NoteSelector from './components/NoteSelector.vue';
 import PopoverShell from './components/PopoverShell.vue';

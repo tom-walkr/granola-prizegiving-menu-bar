@@ -11,10 +11,9 @@ use tauri_plugin_positioner::{on_tray_event, Position, WindowExt};
 
 const POPOVER_LABEL: &str = "popover";
 
-// Template image: macOS ignores color here and tints the shape itself for
-// light/dark menu bars, so only the alpha mask matters at runtime. The
-// light/dark PNG pairs in icons/tray/ are still shipped as separate assets
-// per the brief, ready to swap in for a non-template icon during the design pass.
+// Prizegiving logo (from src/assets/granola-pg-logo.svg) as a template image:
+// macOS ignores RGB and tints the alpha mask for light/dark menu bars.
+// Light/dark PNG pairs stay in sync for a future non-template swap.
 const TRAY_ICON_BYTES: &[u8] = include_bytes!("../icons/tray/tray-icon-dark@2x.png");
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
-import granolaLogo from '../assets/granola-logo.svg';
+import granolaLogo from '../assets/granola-pg-logo.svg';
 import PopoverShell from './PopoverShell.vue';
 
 // PopoverShell is layout-only, so these stories just vary the slot content to
