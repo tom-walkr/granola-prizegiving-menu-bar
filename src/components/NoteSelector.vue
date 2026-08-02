@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { describeGranolaLoadError, listAllNotes } from '../api/granola';
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import { describeGranolaLoadError, getNote, listAllNotes } from '../api/granola';
 import type { NoteListItem } from '../api/types';
 import chevronLeft from '../assets/chevron-left.svg?raw';
 import granolaLogo from '../assets/granola-pg-logo.svg';
+import {
+  classifyPrizegivingCapability,
+  type PrizegivingCapability,
+} from '../logic/prizegivingCapability';
 import MeetingList from './MeetingList.vue';
 import MeetingListSkeleton from './MeetingListSkeleton.vue';
 
@@ -34,9 +38,11 @@ const error = ref<string | null>(null);
 const view = ref<View>('recent');
 /** Directional slide: forward = into browse, back = return to recent. */
 const slideName = ref('note-slide-forward');
+const prizegivingById = reactive<Record<string, PrizegivingCapability>>({});
 
 let pollHandle: ReturnType<typeof setInterval> | undefined;
 let lastFetchAt = 0;
+let probeGeneration = 0;
 
 const showSkeleton = computed(() => isLoading.value && notes.value.length === 0 && !error.value);
 const showList = computed(() => notes.value.length > 0);
@@ -51,9 +57,43 @@ const canBrowse = computed(() => olderCount.value > 0);
 
 watch(
   view,
-  (next) => emit('browsing', next === 'browse'),
+  (next) => {
+    emit('browsing', next === 'browse');
+    if (next === 'browse') void probePrizegiving(sortedNotes.value.map((n) => n.id));
+  },
   { immediate: true }
 );
+
+/**
+ * List payloads have no transcript — fetch each note (rate-limited) to learn
+ * whether diarization labels will unlock full AwardCards.
+ */
+async function probePrizegiving(ids: string[]): Promise<void> {
+  const generation = probeGeneration;
+  const pending = ids.filter((id) => prizegivingById[id] === undefined);
+  if (pending.length === 0) return;
+
+  await Promise.all(
+    pending.map(async (id) => {
+      try {
+        const note = await getNote(id, { includeTranscript: true });
+        if (generation !== probeGeneration) return;
+        prizegivingById[id] = note
+          ? classifyPrizegivingCapability(note.transcript)
+          : 'empty';
+        // List endpoint omits attendees — fill them in once we have detail.
+        if (note && note.attendees.length > 0) {
+          const index = notes.value.findIndex((n) => n.id === id);
+          if (index >= 0) {
+            notes.value[index] = { ...notes.value[index], attendees: note.attendees };
+          }
+        }
+      } catch {
+        // Leave unset so a later refresh can retry.
+      }
+    })
+  );
+}
 
 async function loadNotes(): Promise<void> {
   if (props.forcedStatus === 'loading') {
@@ -76,6 +116,24 @@ async function loadNotes(): Promise<void> {
   try {
     notes.value = await listAllNotes();
     lastFetchAt = Date.now();
+    probeGeneration += 1;
+
+    const liveIds = new Set(notes.value.map((n) => n.id));
+    for (const id of Object.keys(prizegivingById)) {
+      if (!liveIds.has(id)) delete prizegivingById[id];
+    }
+
+    const newestIds = [...notes.value]
+      .sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0))
+      .slice(0, RECENT_COUNT)
+      .map((n) => n.id);
+    // Re-check recent notes so a transcript that finishes processing can flip to full.
+    for (const id of newestIds) delete prizegivingById[id];
+
+    void probePrizegiving(newestIds);
+    if (view.value === 'browse') {
+      void probePrizegiving(notes.value.map((n) => n.id));
+    }
   } catch (err) {
     error.value = describeGranolaLoadError(err);
   } finally {
@@ -110,6 +168,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (pollHandle) clearInterval(pollHandle);
+  probeGeneration += 1;
 });
 
 defineExpose({ refresh });
@@ -145,6 +204,7 @@ defineExpose({ refresh });
             :notes="recentNotes"
             :selected-id="selectedId"
             :grouped="false"
+            :prizegiving-by-id="prizegivingById"
             collapsible
             @select="onSelect"
           />
@@ -179,6 +239,7 @@ defineExpose({ refresh });
             <MeetingList
               :notes="sortedNotes"
               :selected-id="selectedId"
+              :prizegiving-by-id="prizegivingById"
               @select="onSelect"
             />
           </div>

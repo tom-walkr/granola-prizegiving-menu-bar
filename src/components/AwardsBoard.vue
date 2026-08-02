@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { getNote, describeGranolaLoadError } from '../api/granola';
+import clipboardIcon from '../assets/clipboard.svg?raw';
 import { computeAwards } from '../logic/awards';
 import type { AwardsResult } from '../logic/awards';
+import { formatAwardsForSlack } from '../logic/slackSummary';
 import { computeSpeakerStats } from '../logic/speakerStats';
 import type { SpeakerStats } from '../logic/speakerStats';
 import { wordShareFromStats } from '../logic/wordShare';
@@ -12,6 +14,8 @@ import TwoWayComparison from './TwoWayComparison.vue';
 import WordShareChart from './WordShareChart.vue';
 
 type Status = 'loading' | 'ready' | 'not-ready' | 'empty' | 'error';
+
+const COPY_RESET_MS = 2000;
 
 const props = defineProps<{
   noteId: string;
@@ -23,7 +27,12 @@ const status = ref<Status>('loading');
 const errorMessage = ref('');
 const result = ref<AwardsResult | null>(null);
 const stats = ref<SpeakerStats | null>(null);
+const meetingTitle = ref('');
+const meetingCreatedAt = ref('');
 const loadedNoteId = ref<string | null>(null);
+const copyState = ref<'idle' | 'copied' | 'failed'>('idle');
+
+let copyResetHandle: ReturnType<typeof setTimeout> | undefined;
 
 const wordShare = computed(() => (stats.value ? wordShareFromStats(stats.value) : []));
 
@@ -40,54 +49,87 @@ const showContent = computed(
     loadedNoteId.value === props.noteId
 );
 
+const copyLabel = computed(() => {
+  if (copyState.value === 'copied') return 'Copied!';
+  if (copyState.value === 'failed') return 'Copy failed';
+  return 'Copy';
+});
+
+function clearMeeting(): void {
+  result.value = null;
+  stats.value = null;
+  meetingTitle.value = '';
+  meetingCreatedAt.value = '';
+  loadedNoteId.value = null;
+  copyState.value = 'idle';
+}
+
 async function load(noteId: string): Promise<void> {
   status.value = 'loading';
   errorMessage.value = '';
+  copyState.value = 'idle';
 
   // Drop stale awards when switching notes so we don't flash the wrong meeting.
   if (loadedNoteId.value !== noteId) {
     result.value = null;
     stats.value = null;
+    meetingTitle.value = '';
+    meetingCreatedAt.value = '';
   }
 
   if (props.forcedStatus === 'loading') return;
   if (props.forcedStatus === 'error') {
     errorMessage.value = 'Something went wrong loading this note.';
     status.value = 'error';
-    result.value = null;
-    stats.value = null;
-    loadedNoteId.value = null;
+    clearMeeting();
     return;
   }
 
   try {
     const note = await getNote(noteId, { includeTranscript: true });
     if (!note) {
-      result.value = null;
-      stats.value = null;
-      loadedNoteId.value = null;
+      clearMeeting();
       status.value = 'not-ready';
       return;
     }
     if (!note.transcript || note.transcript.length === 0) {
-      result.value = null;
-      stats.value = null;
-      loadedNoteId.value = null;
+      clearMeeting();
       status.value = 'empty';
       return;
     }
     const nextStats = computeSpeakerStats(note.transcript, note.attendees);
     stats.value = nextStats;
     result.value = computeAwards(nextStats);
+    meetingTitle.value = note.title;
+    meetingCreatedAt.value = note.created_at;
     loadedNoteId.value = noteId;
     status.value = 'ready';
   } catch (err) {
     errorMessage.value = describeGranolaLoadError(err);
-    result.value = null;
-    stats.value = null;
-    loadedNoteId.value = null;
+    clearMeeting();
     status.value = 'error';
   }
+}
+
+async function copyForSlack(): Promise<void> {
+  if (!result.value || !meetingTitle.value) return;
+
+  const text = formatAwardsForSlack(
+    { title: meetingTitle.value, createdAt: meetingCreatedAt.value },
+    result.value
+  );
+
+  try {
+    await navigator.clipboard.writeText(text);
+    copyState.value = 'copied';
+  } catch {
+    copyState.value = 'failed';
+  }
+
+  if (copyResetHandle) clearTimeout(copyResetHandle);
+  copyResetHandle = setTimeout(() => {
+    copyState.value = 'idle';
+  }, COPY_RESET_MS);
 }
 
 onMounted(() => load(props.noteId));
@@ -95,6 +137,9 @@ watch(
   () => props.noteId,
   (noteId) => load(noteId)
 );
+onUnmounted(() => {
+  if (copyResetHandle) clearTimeout(copyResetHandle);
+});
 </script>
 
 <template>
@@ -148,6 +193,23 @@ watch(
         :rest-name="result.restOfCall.displayName"
         :rest-seconds="result.restOfCall.totalDurationSeconds"
       />
+
+      <div class="awards-board__toolbar">
+        <button
+          type="button"
+          class="awards-board__copy"
+          :class="{
+            'is-copied': copyState === 'copied',
+            'is-failed': copyState === 'failed',
+          }"
+          :aria-label="copyLabel"
+          :title="copyLabel"
+          @click="copyForSlack"
+        >
+          <span class="awards-board__copy-icon" aria-hidden="true" v-html="clipboardIcon" />
+          <span class="awards-board__copy-label">{{ copyLabel }}</span>
+        </button>
+      </div>
     </template>
   </section>
 </template>
@@ -158,6 +220,67 @@ watch(
   flex-direction: column;
   gap: var(--stack-gap);
   min-width: 0;
+}
+
+.awards-board__toolbar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.awards-board__copy {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin: 0;
+  padding: var(--space-xs) var(--space-sm);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-ink-muted);
+  font-family: inherit;
+  font-size: var(--text-xs-size);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--text-xs-leading);
+  letter-spacing: var(--text-xs-tracking);
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.awards-board__copy:hover,
+.awards-board__copy:focus-visible {
+  background: var(--chrome-row-hover);
+  color: var(--color-ink);
+}
+
+.awards-board__copy:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 1px;
+}
+
+.awards-board__copy.is-copied {
+  color: var(--color-ink-accent-strong);
+}
+
+.awards-board__copy.is-failed {
+  color: var(--color-ink-danger);
+}
+
+.awards-board__copy-icon {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+}
+
+.awards-board__copy-icon :deep(svg) {
+  display: block;
+  width: 14px;
+  height: 14px;
+}
+
+.awards-board__copy-label {
+  white-space: nowrap;
 }
 
 .awards-board__message {

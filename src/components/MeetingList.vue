@@ -7,6 +7,7 @@ import {
   groupNotesByDate,
   initialsFromTitle,
 } from '../logic/meetingDisplay';
+import type { PrizegivingCapability } from '../logic/prizegivingCapability';
 import MeetingDateHeader from './MeetingDateHeader.vue';
 import MeetingEntry from './MeetingEntry.vue';
 
@@ -27,11 +28,14 @@ const props = withDefaults(
      * Off by default — the popover uses a recent / browse split instead.
      */
     collapsible?: boolean;
+    /** Per-note prizegiving capability once transcripts have been probed. */
+    prizegivingById?: Record<string, PrizegivingCapability>;
   }>(),
   {
     selectedId: null,
     grouped: true,
     collapsible: false,
+    prizegivingById: () => ({}),
   }
 );
 
@@ -182,6 +186,7 @@ onUnmounted(() => clearCollapseTimer());
               :initials="initialsFromTitle(row.note.title)"
               :selected="row.note.id === selectedId"
               :shared="(row.note.attendees?.length ?? 0) > 1"
+              :prizegiving="prizegivingById[row.note.id] ?? null"
               @select="$emit('select', row.note.id)"
             />
           </div>

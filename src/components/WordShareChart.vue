@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, nextTick, onUnmounted, ref } from 'vue';
 import { formatTalkDuration, type WordShareEntry } from '../logic/wordShare';
 
 type ShareMode = 'words' | 'time';
@@ -17,6 +17,20 @@ const DOT_COLORS = [
 ] as const;
 
 const mode = ref<ShareMode>('words');
+const popping = ref(false);
+const flipping = ref(false);
+
+let flipTimer: ReturnType<typeof setTimeout> | undefined;
+let popTimer: ReturnType<typeof setTimeout> | undefined;
+
+/** Keep each speaker on a stable color even when the list re-sorts. */
+const colorByKey = computed(() => {
+  const map = new Map<string, string>();
+  props.entries.forEach((entry, index) => {
+    map.set(entry.key, DOT_COLORS[index % DOT_COLORS.length]);
+  });
+  return map;
+});
 
 const sortedEntries = computed(() => {
   const list = [...props.entries];
@@ -34,8 +48,8 @@ const totalValue = computed(() =>
 
 const hasData = computed(() => sortedEntries.value.length > 0 && totalValue.value > 0);
 
-function colorFor(index: number): string {
-  return DOT_COLORS[index % DOT_COLORS.length];
+function colorFor(entry: WordShareEntry): string {
+  return colorByKey.value.get(entry.key) ?? DOT_COLORS[0];
 }
 
 function formatWords(words: number): string {
@@ -60,70 +74,163 @@ function formatTotal(): string {
     : `${formatWords(totalValue.value)} total`;
 }
 
-function toggleMode(): void {
-  mode.value = mode.value === 'words' ? 'time' : 'words';
+function clearTimers(): void {
+  if (flipTimer !== undefined) {
+    clearTimeout(flipTimer);
+    flipTimer = undefined;
+  }
+  if (popTimer !== undefined) {
+    clearTimeout(popTimer);
+    popTimer = undefined;
+  }
 }
+
+async function toggleMode(): Promise<void> {
+  if (!hasData.value) return;
+
+  clearTimers();
+  mode.value = mode.value === 'words' ? 'time' : 'words';
+
+  // Restart CSS animations cleanly (toggle class off → on).
+  popping.value = false;
+  flipping.value = false;
+  await nextTick();
+  popping.value = true;
+  flipping.value = true;
+
+  popTimer = setTimeout(() => {
+    popping.value = false;
+    popTimer = undefined;
+  }, 420);
+  flipTimer = setTimeout(() => {
+    flipping.value = false;
+    flipTimer = undefined;
+  }, 320);
+}
+
+onUnmounted(() => clearTimers());
 </script>
 
 <template>
   <section
     class="word-share"
-    :aria-label="mode === 'words' ? 'Words per person' : 'Talk time per person'"
+    :class="{ 'is-interactive': hasData }"
+    :role="hasData ? 'button' : undefined"
+    :tabindex="hasData ? 0 : undefined"
+    :aria-label="
+      hasData
+        ? mode === 'words'
+          ? 'Words per person. Click to show talk time.'
+          : 'Talk time per person. Click to show words.'
+        : mode === 'words'
+          ? 'Words per person'
+          : 'Talk time per person'
+    "
+    @click="toggleMode"
+    @keydown.enter.prevent="toggleMode"
+    @keydown.space.prevent="toggleMode"
   >
-    <header class="word-share__header">
-      <h3 class="word-share__title">{{ mode === 'words' ? 'Words' : 'Time' }}</h3>
-      <p class="word-share__total">{{ formatTotal() }}</p>
-    </header>
-
-    <button
-      v-if="hasData"
-      type="button"
-      class="word-share__bar"
-      :aria-label="
-        mode === 'words'
-          ? 'Show talk time share. ' +
-            sortedEntries
-              .map((entry) => `${entry.name}: ${formatWords(entry.words)} words`)
-              .join(', ')
-          : 'Show word share. ' +
-            sortedEntries
-              .map((entry) => `${entry.name}: ${formatTalkDuration(entry.seconds)}`)
-              .join(', ')
-      "
-      @click="toggleMode"
+    <!-- Motion shell: hover + click scale live here so they don't fight content transforms. -->
+    <div
+      class="word-share__motion"
+      :class="{ 'is-popping': popping, 'is-flipping': flipping }"
     >
-      <span
-        v-for="(entry, index) in sortedEntries"
-        :key="entry.key"
-        class="word-share__segment"
-        :style="{
-          flexGrow: valueOf(entry),
-          background: colorFor(index),
-        }"
-        :title="`${entry.name}: ${formatValue(entry)}`"
-      />
-    </button>
-    <div v-else class="word-share__bar word-share__bar--empty" aria-hidden="true" />
+      <header class="word-share__header">
+        <h3 class="word-share__title">{{ mode === 'words' ? 'Words' : 'Time' }}</h3>
+        <p class="word-share__total">{{ formatTotal() }}</p>
+      </header>
 
-    <ul class="word-share__legend">
-      <li v-for="(entry, index) in sortedEntries" :key="entry.key" class="word-share__row">
-        <span class="word-share__swatch" :style="{ background: colorFor(index) }" />
-        <span class="word-share__name">{{ entry.name }}</span>
-        <span class="word-share__value">{{ formatValue(entry) }}</span>
-        <span class="word-share__pct">{{ Math.round(shareOf(entry) * 100) }}%</span>
-      </li>
-    </ul>
+      <div v-if="hasData" class="word-share__bar" aria-hidden="true">
+        <span
+          v-for="entry in entries"
+          :key="entry.key"
+          class="word-share__segment"
+          :style="{
+            flexGrow: valueOf(entry),
+            background: colorFor(entry),
+          }"
+          :title="`${entry.name}: ${formatValue(entry)}`"
+        />
+      </div>
+      <div v-else class="word-share__bar word-share__bar--empty" aria-hidden="true" />
+
+      <ul class="word-share__legend">
+        <li v-for="entry in sortedEntries" :key="entry.key" class="word-share__row">
+          <span class="word-share__swatch" :style="{ background: colorFor(entry) }" />
+          <span class="word-share__name">{{ entry.name }}</span>
+          <span class="word-share__value">{{ formatValue(entry) }}</span>
+          <span class="word-share__pct">{{ Math.round(shareOf(entry) * 100) }}%</span>
+        </li>
+      </ul>
+    </div>
   </section>
 </template>
 
 <style scoped>
 .word-share {
+  display: block;
+  border-radius: var(--radius-xl);
+  background: var(--oats-fill-soft);
+}
+
+.word-share.is-interactive {
+  cursor: pointer;
+}
+
+.word-share.is-interactive:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+.word-share__motion {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
   padding: var(--space-md);
   border-radius: var(--radius-xl);
-  background: var(--oats-fill-soft);
+  transform: scale(1);
+  transform-origin: center center;
+  transition: transform var(--duration-moderate) var(--ease-out-expo);
+  will-change: transform;
+}
+
+.word-share.is-interactive:hover .word-share__motion,
+.word-share.is-interactive:focus-visible .word-share__motion {
+  transform: scale(1.02);
+}
+
+.word-share__motion.is-popping {
+  animation: word-share-pop 420ms var(--ease-out-expo);
+}
+
+@keyframes word-share-pop {
+  0% {
+    transform: scale(1.02);
+  }
+  40% {
+    transform: scale(0.965);
+  }
+  100% {
+    transform: scale(1.02);
+  }
+}
+
+.word-share__motion.is-flipping .word-share__title,
+.word-share__motion.is-flipping .word-share__total,
+.word-share__motion.is-flipping .word-share__value,
+.word-share__motion.is-flipping .word-share__pct {
+  animation: word-share-flip 300ms var(--ease-out-expo) both;
+}
+
+@keyframes word-share-flip {
+  from {
+    opacity: 0.35;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .word-share__header {
@@ -156,18 +263,8 @@ function toggleMode(): void {
   overflow: hidden;
   width: 100%;
   height: 12px;
-  margin: 0;
-  padding: 0;
-  border: 0;
   border-radius: var(--radius-pill);
   background: var(--oats-fill-soft-opaque);
-  cursor: pointer;
-  appearance: none;
-}
-
-.word-share__bar:focus-visible {
-  outline: 2px solid var(--color-fill-accent);
-  outline-offset: 2px;
 }
 
 .word-share__bar--empty {
@@ -177,7 +274,6 @@ function toggleMode(): void {
 .word-share__segment {
   min-width: 0;
   flex-basis: 0;
-  pointer-events: none;
   transition: flex-grow var(--duration-slow) var(--ease-out-expo);
 }
 
@@ -231,5 +327,28 @@ function toggleMode(): void {
   min-width: 2.5em;
   color: var(--color-ink-quiet);
   text-align: right;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .word-share__motion {
+    transition: none;
+  }
+
+  .word-share.is-interactive:hover .word-share__motion,
+  .word-share.is-interactive:focus-visible .word-share__motion {
+    transform: none;
+  }
+
+  .word-share__motion.is-popping,
+  .word-share__motion.is-flipping .word-share__title,
+  .word-share__motion.is-flipping .word-share__total,
+  .word-share__motion.is-flipping .word-share__value,
+  .word-share__motion.is-flipping .word-share__pct {
+    animation: none;
+  }
+
+  .word-share__segment {
+    transition: none;
+  }
 }
 </style>

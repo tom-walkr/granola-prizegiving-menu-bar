@@ -43,6 +43,29 @@ export const Solo: Story = {
     time: '11:00',
     initials: 'QS',
     shared: false,
+    prizegiving: 'empty',
+  },
+};
+
+export const FullPrizegiving: Story = {
+  args: {
+    title: 'Weekly Standup',
+    subtitle: 'Alice, Bob & 1 other',
+    time: '09:00',
+    initials: 'WS',
+    shared: true,
+    prizegiving: 'full',
+  },
+};
+
+export const TwoWayOnly: Story = {
+  args: {
+    title: 'Vendor Proposal Call',
+    subtitle: 'You, Jordan',
+    time: '14:00',
+    initials: 'VP',
+    shared: true,
+    prizegiving: 'two-way',
   },
 };
 
@@ -53,5 +76,6 @@ export const LongTitle: Story = {
     time: '09:00',
     initials: 'QP',
     shared: true,
+    prizegiving: 'full',
   },
 };
