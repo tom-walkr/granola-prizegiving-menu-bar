@@ -8,15 +8,20 @@
   <em>A macOS menu bar app that turns meeting transcripts into tongue-in-cheek talk-time awards.</em>
 </p>
 
-<p align="center">
-  <img src="docs/leaderboard.png" alt="Talk-time leaderboard" width="420" />
-  &nbsp;&nbsp;
-  <img src="docs/awards.png" alt="Prizegiving awards for a meeting" width="420" />
-</p>
-
-<p align="center">
-  <sub>Talk-time leaderboard · Awards</sub>
-</p>
+<table align="center">
+  <tr>
+    <td align="center" width="50%">
+      <img src="docs/leaderboard.png" alt="Talk-time leaderboard" width="420" />
+      <br />
+      <sub>Talk-time leaderboard</sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="docs/awards.png" alt="Prizegiving awards for a meeting" width="420" />
+      <br />
+      <sub>Awards</sub>
+    </td>
+  </tr>
+</table>
 
 ---
 
