@@ -110,4 +110,56 @@ describe('computeSpeakerStats', () => {
     expect(bob?.overlapCount).toBe(1);
     expect(alice?.overlapCount).toBe(0);
   });
+
+  it('does not invent attendee names from anonymous Speaker A/B labels by order', () => {
+    const utterances = [
+      utterance('Speaker A', 'microphone', 0, 5, 'Hello from the first voice.'),
+      utterance('Speaker B', 'speaker', 5, 10, 'And hello from the second.'),
+    ];
+
+    const stats = computeSpeakerStats(utterances, [
+      { name: 'Alice Smith' },
+      { name: 'Bob Jones' },
+    ]);
+
+    expect(stats.mode).toBe('full');
+    if (stats.mode !== 'full') throw new Error('unreachable');
+    expect(stats.speakers.map((speaker) => speaker.displayName).sort()).toEqual([
+      'Speaker A',
+      'Speaker B',
+    ]);
+  });
+
+  it('resolves a display name only when the diarization label uniquely identifies an attendee', () => {
+    const utterances = [
+      utterance('alice', 'microphone', 0, 5, 'Hi everyone.'),
+      utterance('Speaker C', 'speaker', 5, 10, 'Still anonymous.'),
+      utterance('Dana Okonkwo', 'speaker', 10, 15, 'Full name match.'),
+    ];
+
+    const stats = computeSpeakerStats(utterances, [
+      { name: 'Alice Smith' },
+      { name: 'Bob Jones' },
+      { name: 'Dana Okonkwo' },
+    ]);
+
+    expect(stats.mode).toBe('full');
+    if (stats.mode !== 'full') throw new Error('unreachable');
+    expect(stats.speakers.map((speaker) => speaker.displayName).sort()).toEqual([
+      'Alice Smith',
+      'Dana Okonkwo',
+      'Speaker C',
+    ]);
+  });
+
+  it('keeps the raw label when a first name matches more than one attendee', () => {
+    const stats = computeSpeakerStats(
+      [utterance('alex', 'speaker', 0, 5, 'Which Alex am I?')],
+      [{ name: 'Alex Chen' }, { name: 'Alex Rivera' }]
+    );
+
+    expect(stats.mode).toBe('full');
+    if (stats.mode !== 'full') throw new Error('unreachable');
+    expect(stats.speakers[0].displayName).toBe('alex');
+  });
 });

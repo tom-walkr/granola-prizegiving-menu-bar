@@ -123,20 +123,50 @@ function diarizationKey(utterance: TranscriptUtterance): string {
   return utterance.speaker.diarization_label ?? `unlabeled-${utterance.speaker.source}`;
 }
 
+/** Anonymous diarization buckets ("Speaker A", "Speaker 1") — not real identity. */
+function isAnonymousSpeakerLabel(label: string): boolean {
+  return /^speaker\s+[a-z0-9]+$/i.test(label.trim());
+}
+
+/**
+ * Use an attendee name only when the diarization label itself identifies
+ * them (exact full name, or a unique first-name match). Never invent a
+ * mapping from speaker order to the attendees list.
+ */
+function resolveDisplayName(label: string, attendees: Attendee[]): string {
+  if (isAnonymousSpeakerLabel(label) || attendees.length === 0) {
+    return label;
+  }
+
+  const normalized = label.trim().toLowerCase();
+
+  const exactMatches = attendees.filter(
+    (attendee) => attendee.name?.trim().toLowerCase() === normalized
+  );
+  if (exactMatches.length === 1 && exactMatches[0].name) {
+    return exactMatches[0].name;
+  }
+
+  const firstNameMatches = attendees.filter((attendee) => {
+    const first = attendee.name?.trim().split(/\s+/)[0]?.toLowerCase();
+    return first === normalized;
+  });
+  if (firstNameMatches.length === 1 && firstNameMatches[0].name) {
+    return firstNameMatches[0].name;
+  }
+
+  return label;
+}
+
 function computeFullBreakdown(sorted: TranscriptUtterance[], attendees: Attendee[]): FullSpeakerStats {
-  const orderSeen: string[] = [];
   const accumulators = new Map<string, Accumulator>();
 
   for (const utterance of sorted) {
     const key = diarizationKey(utterance);
     if (accumulators.has(key)) continue;
 
-    orderSeen.push(key);
-    // The API doesn't map diarization labels to attendee identity directly,
-    // so we join positionally (first label seen -> first attendee) as a
-    // best effort; falls back to the raw label when attendees run out.
-    const attendee = attendees[orderSeen.length - 1];
-    accumulators.set(key, newAccumulator(key, attendee?.name ?? key));
+    const label = utterance.speaker.diarization_label ?? key;
+    accumulators.set(key, newAccumulator(key, resolveDisplayName(label, attendees)));
   }
 
   accumulate(sorted, diarizationKey, accumulators);

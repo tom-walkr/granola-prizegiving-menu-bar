@@ -65,7 +65,10 @@ else lumped together, no per-person detail. `computeSpeakerStats` detects
 which case it's in (does any utterance have a label?) and returns either a
 `full` result (per-speaker profiles) or a `two-way` result (`you` vs.
 `restOfCall`). Don't try to fake a full breakdown out of two-way data —
-there's no information to do it with.
+there's no information to do it with. Don't invent speaker identity from
+attendee list order either — anonymous labels like "Speaker A" stay as-is;
+attendee names are used only when the label itself uniquely identifies
+someone (exact name or unique first name).
 
 Overlap/interruption counting is an approximation: an utterance counts as an
 overlap if it starts before the previous utterance (from a different
