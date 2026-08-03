@@ -124,7 +124,7 @@ function diarizationKey(utterance: TranscriptUtterance): string {
 }
 
 /** Anonymous diarization buckets ("Speaker A", "Speaker 1") — not real identity. */
-function isAnonymousSpeakerLabel(label: string): boolean {
+export function isAnonymousSpeakerLabel(label: string): boolean {
   return /^speaker\s+[a-z0-9]+$/i.test(label.trim());
 }
 

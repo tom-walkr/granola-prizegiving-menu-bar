@@ -40,3 +40,13 @@ export const TwoWay: Story = {
     ],
   },
 };
+
+export const AnonymousLabels: Story = {
+  args: {
+    entries: [
+      { key: 'Speaker A', name: 'Speaker A', words: 220, seconds: 180, wordShare: 0.44, timeShare: 0.45 },
+      { key: 'Speaker B', name: 'Speaker B', words: 180, seconds: 140, wordShare: 0.36, timeShare: 0.35 },
+      { key: 'Speaker C', name: 'Speaker C', words: 100, seconds: 80, wordShare: 0.2, timeShare: 0.2 },
+    ],
+  },
+};

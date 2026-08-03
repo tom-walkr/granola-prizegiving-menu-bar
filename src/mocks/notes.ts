@@ -167,7 +167,41 @@ export const mockEmptyTranscriptNote: Note = {
   transcript: [],
 };
 
-const MOCK_NOTES: Note[] = [mockIosStandupNote, mockMacosOneOnOneNote, mockEmptyTranscriptNote];
+/** Full breakdown with anonymous Speaker A/B labels — for rename UI demos. */
+const anonymousSpeakersTranscript: TranscriptUtterance[] = [
+  utterance('Speaker A', 'microphone', 0, 8, 'Thanks for joining, I wanted to check in on the launch checklist.'),
+  utterance('Speaker B', 'speaker', 8, 22, 'Sure, most of the items are done, just waiting on the final copy review.'),
+  utterance('Speaker A', 'microphone', 22, 28, 'Great, and who is owning the status page update?'),
+  utterance(
+    'Speaker C',
+    'speaker',
+    28,
+    48,
+    "That's me. I'll push the draft this afternoon and ping the channel once it's live."
+  ),
+  utterance('Speaker B', 'speaker', 47, 55, 'Sounds good — I can help review if you want a second pair of eyes.'),
+  utterance('Speaker A', 'microphone', 55, 60, "Perfect, let's lock that and wrap."),
+];
+
+export const mockAnonymousSpeakersNote: Note = {
+  id: 'note-anonymous-speakers',
+  title: 'Launch checklist',
+  created_at: '2026-07-24T16:00:00.000Z',
+  updated_at: '2026-07-24T16:05:00.000Z',
+  attendees: [{ name: 'You' }, { name: 'Sam Ortiz' }, { name: 'Priya Nair' }],
+  summary: {
+    markdown: '## Launch checklist\n\nAnonymous diarization labels without speaker tags.',
+  },
+  transcript: anonymousSpeakersTranscript,
+  web_url: 'https://notes.granola.ai/d/note-anonymous-speakers',
+};
+
+const MOCK_NOTES: Note[] = [
+  mockIosStandupNote,
+  mockMacosOneOnOneNote,
+  mockEmptyTranscriptNote,
+  mockAnonymousSpeakersNote,
+];
 
 /** Extra list rows so Storybook / mock mode can exercise the browse-all page. */
 const MOCK_LIST_ONLY: NoteListItem[] = [

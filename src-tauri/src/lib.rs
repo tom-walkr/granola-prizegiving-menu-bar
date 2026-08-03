@@ -4,6 +4,7 @@ mod open_url;
 mod popover;
 mod seen_notes;
 mod settings;
+mod speaker_aliases;
 
 use tauri::{
     image::Image,
@@ -38,6 +39,8 @@ pub fn run() {
             settings::close_settings_window,
             seen_notes::get_seen_note_ids,
             seen_notes::set_seen_note_ids,
+            speaker_aliases::get_speaker_aliases,
+            speaker_aliases::set_speaker_aliases,
             popover::show_popover,
         ])
         .setup(|app| {

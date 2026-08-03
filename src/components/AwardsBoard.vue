@@ -6,11 +6,13 @@ import granolaLogo from '../assets/granola-logo.svg?raw';
 import slackIcon from '../assets/slack.svg?raw';
 import { computeAwards } from '../logic/awards';
 import type { AwardsResult } from '../logic/awards';
+import { applySpeakerAliases } from '../logic/speakerAliases';
 import { formatAwardsForSlack, formatAwardsPlain } from '../logic/slackSummary';
 import { computeSpeakerStats } from '../logic/speakerStats';
 import type { SpeakerStats } from '../logic/speakerStats';
 import { wordShareFromStats } from '../logic/wordShare';
 import { openGranolaNote } from '../openGranola';
+import { loadSpeakerAliases, saveSpeakerAliases } from '../speakerAliases/store';
 import AwardCard from './AwardCard.vue';
 import AwardsBoardSkeleton from './AwardsBoardSkeleton.vue';
 import TwoWayComparison from './TwoWayComparison.vue';
@@ -30,7 +32,8 @@ const props = defineProps<{
 
 const status = ref<Status>('loading');
 const errorMessage = ref('');
-const stats = ref<SpeakerStats | null>(null);
+const baseStats = ref<SpeakerStats | null>(null);
+const speakerAliases = ref<Record<string, string>>({});
 const meetingTitle = ref('');
 const meetingCreatedAt = ref('');
 const noteWebUrl = ref<string | null>(null);
@@ -41,6 +44,10 @@ const slackCopyState = ref<CopyFeedback>('idle');
 const copyResetHandles: Partial<Record<CopyKind, ReturnType<typeof setTimeout>>> = {};
 
 /** Always derive awards from current stats so values stay in sync with the share chart. */
+const stats = computed<SpeakerStats | null>(() =>
+  baseStats.value ? applySpeakerAliases(baseStats.value, speakerAliases.value) : null
+);
+
 const result = computed<AwardsResult | null>(() =>
   stats.value ? computeAwards(stats.value) : null
 );
@@ -93,7 +100,8 @@ function scheduleCopyReset(kind: CopyKind): void {
 }
 
 function clearMeeting(): void {
-  stats.value = null;
+  baseStats.value = null;
+  speakerAliases.value = {};
   meetingTitle.value = '';
   meetingCreatedAt.value = '';
   noteWebUrl.value = null;
@@ -108,7 +116,8 @@ async function load(noteId: string): Promise<void> {
 
   // Drop stale awards when switching notes so we don't flash the wrong meeting.
   if (loadedNoteId.value !== noteId) {
-    stats.value = null;
+    baseStats.value = null;
+    speakerAliases.value = {};
     meetingTitle.value = '';
     meetingCreatedAt.value = '';
     noteWebUrl.value = null;
@@ -123,7 +132,10 @@ async function load(noteId: string): Promise<void> {
   }
 
   try {
-    const note = await getNote(noteId, { includeTranscript: true });
+    const [note, aliases] = await Promise.all([
+      getNote(noteId, { includeTranscript: true }),
+      loadSpeakerAliases(noteId),
+    ]);
     if (!note) {
       clearMeeting();
       status.value = 'not-ready';
@@ -134,7 +146,8 @@ async function load(noteId: string): Promise<void> {
       status.value = 'empty';
       return;
     }
-    stats.value = computeSpeakerStats(note.transcript, note.attendees);
+    baseStats.value = computeSpeakerStats(note.transcript, note.attendees);
+    speakerAliases.value = aliases;
     meetingTitle.value = note.title;
     meetingCreatedAt.value = note.created_at;
     noteWebUrl.value = note.web_url ?? null;
@@ -144,6 +157,25 @@ async function load(noteId: string): Promise<void> {
     errorMessage.value = describeGranolaLoadError(err);
     clearMeeting();
     status.value = 'error';
+  }
+}
+
+async function onSpeakerRename(payload: { key: string; name: string }): Promise<void> {
+  const noteId = loadedNoteId.value;
+  if (!noteId) return;
+
+  const next = { ...speakerAliases.value };
+  if (payload.name.trim()) {
+    next[payload.key] = payload.name.trim();
+  } else {
+    delete next[payload.key];
+  }
+
+  speakerAliases.value = next;
+  try {
+    speakerAliases.value = await saveSpeakerAliases(noteId, next);
+  } catch {
+    // Keep the optimistic local rename if persistence fails.
   }
 }
 
@@ -249,7 +281,7 @@ onUnmounted(() => {
     </div>
 
     <template v-else-if="showContent && result">
-      <WordShareChart :entries="wordShare" />
+      <WordShareChart :entries="wordShare" @rename="onSpeakerRename" />
 
       <div v-if="result.mode === 'full'" class="awards-board__grid">
         <AwardCard

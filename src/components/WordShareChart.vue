@@ -1,11 +1,16 @@
 <script setup lang="ts">
-import { computed, nextTick, onUnmounted, ref } from 'vue';
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
+import { isAnonymousSpeakerLabel } from '../logic/speakerStats';
 import { formatTalkDuration, type WordShareEntry } from '../logic/wordShare';
 
 type ShareMode = 'words' | 'time';
 
 const props = defineProps<{
   entries: WordShareEntry[];
+}>();
+
+const emit = defineEmits<{
+  rename: [payload: { key: string; name: string }];
 }>();
 
 const DOT_COLORS = [
@@ -19,9 +24,16 @@ const DOT_COLORS = [
 const mode = ref<ShareMode>('words');
 const popping = ref(false);
 const flipping = ref(false);
+const editingKey = ref<string | null>(null);
+const draftName = ref('');
+const renameInput = ref<HTMLInputElement | null>(null);
 
 let flipTimer: ReturnType<typeof setTimeout> | undefined;
 let popTimer: ReturnType<typeof setTimeout> | undefined;
+
+function bindRenameInput(el: Element | null): void {
+  renameInput.value = el instanceof HTMLInputElement ? el : null;
+}
 
 /** Keep each speaker on a stable color even when the list re-sorts. */
 const colorByKey = computed(() => {
@@ -53,7 +65,7 @@ const hasData = computed(() => sortedEntries.value.length > 0 && totalValue.valu
  * Keep the control clickable even when the active mode is empty (e.g. words
  * exist but talk-time is 0) — otherwise one click into that mode freezes it.
  */
-const canToggle = computed(() => props.entries.length > 0);
+const canToggle = computed(() => props.entries.length > 0 && editingKey.value === null);
 
 function colorFor(entry: WordShareEntry): string {
   return colorByKey.value.get(entry.key) ?? DOT_COLORS[0];
@@ -79,6 +91,10 @@ function formatTotal(): string {
   return mode.value === 'time'
     ? `${formatTalkDuration(totalValue.value)} total`
     : `${formatWords(totalValue.value)} total`;
+}
+
+function canRename(entry: WordShareEntry): boolean {
+  return isAnonymousSpeakerLabel(entry.key);
 }
 
 function clearTimers(): void {
@@ -114,6 +130,52 @@ async function toggleMode(): Promise<void> {
     flipTimer = undefined;
   }, 320);
 }
+
+async function startRename(entry: WordShareEntry, event: Event): Promise<void> {
+  event.stopPropagation();
+  if (!canRename(entry)) return;
+
+  editingKey.value = entry.key;
+  draftName.value = entry.name === entry.key ? '' : entry.name;
+  await nextTick();
+  renameInput.value?.focus();
+  renameInput.value?.select();
+}
+
+function cancelRename(): void {
+  editingKey.value = null;
+  draftName.value = '';
+}
+
+function commitRename(): void {
+  const key = editingKey.value;
+  if (!key) return;
+
+  const name = draftName.value.trim();
+  editingKey.value = null;
+  draftName.value = '';
+  emit('rename', { key, name });
+}
+
+function onRenameKeydown(event: KeyboardEvent): void {
+  event.stopPropagation();
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    commitRename();
+  } else if (event.key === 'Escape') {
+    event.preventDefault();
+    cancelRename();
+  }
+}
+
+watch(
+  () => props.entries.map((entry) => entry.key).join('\0'),
+  () => {
+    if (editingKey.value && !props.entries.some((entry) => entry.key === editingKey.value)) {
+      cancelRename();
+    }
+  }
+);
 
 onUnmounted(() => clearTimers());
 </script>
@@ -164,7 +226,30 @@ onUnmounted(() => clearTimers());
       <ul class="word-share__legend">
         <li v-for="entry in sortedEntries" :key="entry.key" class="word-share__row">
           <span class="word-share__swatch" :style="{ background: colorFor(entry) }" />
-          <span class="word-share__name">{{ entry.name }}</span>
+          <input
+            v-if="editingKey === entry.key"
+            :ref="bindRenameInput"
+            v-model="draftName"
+            class="word-share__rename"
+            type="text"
+            :placeholder="entry.key"
+            :aria-label="`Rename ${entry.key}`"
+            maxlength="80"
+            @click.stop
+            @keydown="onRenameKeydown"
+            @blur="commitRename"
+          />
+          <button
+            v-else-if="canRename(entry)"
+            type="button"
+            class="word-share__name word-share__name--editable"
+            :title="`Rename ${entry.key}`"
+            :aria-label="`Rename ${entry.name}`"
+            @click="startRename(entry, $event)"
+          >
+            {{ entry.name }}
+          </button>
+          <span v-else class="word-share__name">{{ entry.name }}</span>
           <span class="word-share__value">{{ formatValue(entry) }}</span>
           <span class="word-share__pct">{{ Math.round(shareOf(entry) * 100) }}%</span>
         </li>
@@ -314,12 +399,58 @@ onUnmounted(() => clearTimers());
 
 .word-share__name {
   overflow: hidden;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
   font-size: var(--text-sm-size);
   font-weight: var(--font-weight-medium);
   line-height: var(--text-sm-leading);
   color: var(--color-ink);
+  text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.word-share__name--editable {
+  cursor: text;
+  border-radius: var(--radius-sm);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: var(--color-ink-quiet);
+  text-underline-offset: 3px;
+}
+
+.word-share__name--editable:hover,
+.word-share__name--editable:focus-visible {
+  color: var(--color-ink-accent-strong);
+  text-decoration-color: var(--color-ink-accent-strong);
+}
+
+.word-share__name--editable:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 1px;
+}
+
+.word-share__rename {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 1px 4px;
+  border: 1px solid var(--color-border-focus);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-raised);
+  color: var(--color-ink);
+  font: inherit;
+  font-size: var(--text-sm-size);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--text-sm-leading);
+}
+
+.word-share__rename:focus {
+  outline: none;
 }
 
 .word-share__value,

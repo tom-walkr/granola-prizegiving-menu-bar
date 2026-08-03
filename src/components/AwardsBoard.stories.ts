@@ -23,6 +23,10 @@ export const LoadedTwoWay: Story = {
   args: { noteId: 'note-macos-1on1' },
 };
 
+export const AnonymousSpeakers: Story = {
+  args: { noteId: 'note-anonymous-speakers' },
+};
+
 export const Loading: Story = {
   args: { noteId: 'note-ios-standup', forcedStatus: 'loading' },
 };
