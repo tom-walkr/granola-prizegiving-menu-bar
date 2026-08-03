@@ -31,10 +31,6 @@ const renameInput = ref<HTMLInputElement | null>(null);
 let flipTimer: ReturnType<typeof setTimeout> | undefined;
 let popTimer: ReturnType<typeof setTimeout> | undefined;
 
-function bindRenameInput(el: Element | null): void {
-  renameInput.value = el instanceof HTMLInputElement ? el : null;
-}
-
 /** Keep each speaker on a stable color even when the list re-sorts. */
 const colorByKey = computed(() => {
   const map = new Map<string, string>();
@@ -228,7 +224,7 @@ onUnmounted(() => clearTimers());
           <span class="word-share__swatch" :style="{ background: colorFor(entry) }" />
           <input
             v-if="editingKey === entry.key"
-            :ref="bindRenameInput"
+            ref="renameInput"
             v-model="draftName"
             class="word-share__rename"
             type="text"
