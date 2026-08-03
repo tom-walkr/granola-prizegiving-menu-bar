@@ -47,6 +47,8 @@ macOS only. You'll need:
 
 You'll also want a [Granola API key](https://docs.granola.ai) from your workspace settings if you're hitting the real API. You can paste it in the app under **Settings…** (tray menu or the gear in the popover). Mock fixtures are available from the same window.
 
+For proper award attribution by name, set up [Granola speaker tags](https://docs.granola.ai/help-center/taking-notes/speaker-attribution) for Google Meet or Zoom before the meeting. Without them, speakers often show up as anonymous labels (**Speaker A**, **Speaker B**, etc.) or as **Me** / **Them**.
+
 First-time Rust compile of the Tauri shell is slow; subsequent runs are much quicker.
 
 ## Setup
