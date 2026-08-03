@@ -12,7 +12,7 @@ use tauri::{
     window::{Effect, EffectState, EffectsBuilder},
     Manager, WindowEvent,
 };
-use tauri_plugin_positioner::{on_tray_event, Position, WindowExt};
+use tauri_plugin_positioner::on_tray_event;
 
 const POPOVER_LABEL: &str = "popover";
 const SETTINGS_LABEL: &str = "settings";
@@ -72,6 +72,12 @@ pub fn run() {
             let blur_target = popover.clone();
             popover.on_window_event(move |event| {
                 if let WindowEvent::Focused(false) = event {
+                    // Tray clicks focus the menu bar, not the popover — that
+                    // fires Focused(false) in the same tick as show(). Skip
+                    // those; real outside-clicks still dismiss after the grace.
+                    if popover::should_ignore_blur() {
+                        return;
+                    }
                     let _ = blur_target.hide();
                 }
             });
@@ -124,9 +130,11 @@ pub fn run() {
                 .on_tray_icon_event(|tray, event| {
                     on_tray_event(tray.app_handle(), &event);
 
+                    // Handle on mouse-down so we win the race against the
+                    // Focused(false) that macOS emits for menu-bar clicks.
                     let TrayIconEvent::Click {
                         button: MouseButton::Left,
-                        button_state: MouseButtonState::Up,
+                        button_state: MouseButtonState::Down,
                         ..
                     } = event
                     else {
@@ -137,7 +145,7 @@ pub fn run() {
                     let Some(window) = app.get_webview_window(POPOVER_LABEL) else {
                         return;
                     };
-                    toggle_popover(&window);
+                    popover::toggle_popover(&window);
                 })
                 .build(app)?;
 
@@ -145,15 +153,4 @@ pub fn run() {
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-}
-
-fn toggle_popover(window: &tauri::WebviewWindow) {
-    if window.is_visible().unwrap_or(false) {
-        let _ = window.hide();
-        return;
-    }
-
-    let _ = window.move_window_constrained(Position::TrayBottomCenter);
-    let _ = window.show();
-    let _ = window.set_focus();
 }
